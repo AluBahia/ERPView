@@ -171,3 +171,6 @@ export interface User {
   role: string;
   initials: string;
 }
+
+export * from './supabase';
+

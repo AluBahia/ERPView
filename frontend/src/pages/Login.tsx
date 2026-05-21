@@ -105,10 +105,11 @@ export default function Login() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wider text-text-muted">
+              <label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-text-muted">
                 E-mail
               </label>
               <input
+                id="email"
                 type="email"
                 autoComplete="email"
                 value={email}
@@ -119,10 +120,11 @@ export default function Login() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium uppercase tracking-wider text-text-muted">
+              <label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-text-muted">
                 Senha
               </label>
               <input
+                id="password"
                 type="password"
                 autoComplete="current-password"
                 value={password}
@@ -195,7 +197,7 @@ export default function Login() {
                 {/* Form */}
                 <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-medium uppercase tracking-wider text-text-muted">
+                    <label htmlFor="reset-email" className="text-xs font-medium uppercase tracking-wider text-text-muted">
                       E-mail
                     </label>
                     <div className="relative">
@@ -204,6 +206,7 @@ export default function Login() {
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50"
                       />
                       <input
+                        id="reset-email"
                         type="email"
                         autoComplete="email"
                         value={resetEmail}
