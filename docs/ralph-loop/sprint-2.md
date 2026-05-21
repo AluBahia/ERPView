@@ -1,9 +1,10 @@
 # Sprint 2 — Hooks de Dados (14 módulos)
 
-> **Status:** ⏳ Pendente  
+> **Status:** ✅ Concluída  
 > **Duração estimada:** 5 dias  
 > **Pré-requisito:** Sprint 1 ✅ (9 testes passando)  
-> **Próxima:** Sprint 3 — Páginas Reais
+> **Próxima:** Sprint 3 — Páginas Reais  
+> **Conclusão:** 2026-05-21
 
 ---
 
@@ -84,26 +85,26 @@ export function useVendas(filtros: FiltrosVendas = {}) {
 
 ## Checklist de Execução
 
-- [ ] Criar `useVendas.ts` com filtros: data, status, cliente
-- [ ] Criar `useClientes.ts` com filtros: cidade, estado, ativo
-- [ ] Criar `useCompras.ts` com filtros: data, fornecedor, status
-- [ ] Criar `useFornecedores.ts` com filtros: ativo, UF
-- [ ] Criar `useEstoque.ts` com filtros: produto, almoxarifado, abaixo_minimo
-- [ ] Criar `useProdutos.ts` com filtros: categoria, ativo
-- [ ] Criar `useProducao.ts` com filtros: data, status, linha
-- [ ] Criar `useQualidade.ts` com filtros: data, tipo, status
-- [ ] Criar `useExpedicao.ts` com filtros: data, transportadora, status
-- [ ] Criar `useManutencao.ts` com filtros: data, tipo, status, equipamento
-- [ ] Criar `useReceber.ts` com filtros: vencimento, status, cliente
-- [ ] Criar `usePagar.ts` com filtros: vencimento, status, fornecedor
-- [ ] Criar `useFiscal.ts` com filtros: data, tipo_nf, CFOP
-- [ ] Criar `usePatrimonio.ts` com filtros: categoria, localização
-- [ ] Criar `useFluxoCaixa.ts` com filtros: mês/ano, tipo
-- [ ] Criar `useDRE.ts` com filtros: período (mês/ano)
-- [ ] Criar `useCustos.ts` com filtros: período, linha, produto
-- [ ] Criar `useRH.ts` com filtros: departamento, cargo, ativo
-- [ ] Atualizar `useKPIs.ts` para usar dados reais das tabelas
-- [ ] Rodar `tsc --noEmit` — zero erros
+- [x] Criar `useVendas.ts` com filtros: data, status, cliente
+- [x] Criar `useClientes.ts` com filtros: cidade, estado, ativo
+- [x] Criar `useCompras.ts` com filtros: data, fornecedor, status
+- [x] Criar `useFornecedores.ts` com filtros: ativo, UF
+- [x] Criar `useEstoque.ts` com filtros: produto, almoxarifado, abaixo_minimo
+- [x] Criar `useProdutos.ts` com filtros: categoria, ativo
+- [x] Criar `useProducao.ts` com filtros: data, status, linha
+- [x] Criar `useQualidade.ts` com filtros: data, tipo, status
+- [x] Criar `useExpedicao.ts` com filtros: data, transportadora, status
+- [x] Criar `useManutencao.ts` com filtros: data, tipo, status, equipamento
+- [x] Criar `useReceber.ts` com filtros: vencimento, status, cliente
+- [x] Criar `usePagar.ts` com filtros: vencimento, status, fornecedor
+- [x] Criar `useFiscal.ts` com filtros: data, tipo_nf, CFOP
+- [x] Criar `usePatrimonio.ts` com filtros: categoria, localização
+- [x] Criar `useFluxoCaixa.ts` com filtros: mês/ano, tipo
+- [x] Criar `useDRE.ts` com filtros: período (mês/ano)
+- [x] Criar `useCustos.ts` com filtros: período, linha, produto
+- [x] Criar `useRH.ts` com filtros: departamento, cargo, ativo
+- [x] Atualizar `useKPIs.ts` para usar dados reais das tabelas
+- [x] Rodar `tsc --noEmit` — zero erros
 
 ---
 
@@ -143,29 +144,35 @@ export function useVendas(filtros: FiltrosVendas = {}) {
 - `useRH.test.ts` (2)
 - `useKPIs.test.ts` (3 — atualizado para dados reais)
 
-**Total: 45 testes**  
-**Critério:** Todos os 45 passam
+**Total: 48 testes** (45 hooks + 3 useKPIs atualizado)  
+**Critério:** Todos os 48 passam ✅
 
 ---
 
 ## Resultado dos Testes
 
 ```
-Executado em: —
-Total: 0 passou — SPRINT BLOQUEADA
+Executado em: 2026-05-21
+Comando: npx vitest run --reporter=verbose
+
+PASS   23 test files
+Total: 62 passou, 0 falhou — SPRINT CONCLUÍDA
 ```
 
 ---
 
 ## Notas de Execução
 
-_(Preencher durante/após a execução)_
+- 4 bugs corrigidos no useKPIs.ts (fallback para null, tabela rh→rh_colaboradores, pedidos_compra como missing table, transformToKPIs implementado para todos os 18 módulos)
+- 18 hooks de dados criados com filtros e tipagem via Database types
+- Tabela `pedidos_compra` ainda não existe no schema — hook usa `as any` para contornar TypeScript até criação da tabela
+- Todos os hooks seguem padrão useQuery + supabase + throw error + QUERY_STALE_TIME
 
 ---
 
 ## Atualização do CONTEXTO.md
 
 Ao concluir esta sprint:
-- [ ] Status Sprint 2 → ✅ Concluída
-- [ ] Testes: `59 / 164`
-- [ ] Listar todos os hooks criados na estrutura de arquivos
+- [x] Status Sprint 2 → ✅ Concluída
+- [x] Testes: `62 / 164`
+- [x] Listar todos os hooks criados na estrutura de arquivos

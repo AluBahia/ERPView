@@ -86,8 +86,8 @@ CR Service (Node.js local → bridge .NET → Crystal Reports)
 |--------|--------|-----------|--------|-------|
 | **Sprint 0** — Infra Testes + Schema | ✅ Concluída | 2026-05-21 | 5/5 | Ambiente de testes pronto |
 | **Sprint 1** — Types + Auth | ✅ Concluída | 2026-05-21 | 9/9 | Tipos integrados e Auth funcionando |
-| **Sprint 2** — Hooks de Dados | ⏳ Pendente | — | 0/45 | Bloqueada — ver bugs abaixo |
-| **Sprint 3** — Páginas Reais | ⏳ Pendente | — | 0/36 | — |
+| **Sprint 2** — Hooks de Dados | ✅ Concluída | 2026-05-21 | 48/48 | 18 hooks + useKPIs corrigido |
+| **Sprint 3** — Páginas Reais | ⏳ Pendente | — | 0/36 | Próxima sprint |
 | **Sprint 4** — Realtime + Filtros | ⏳ Pendente | — | 0/13 | — |
 | **Sprint 5** — Sync Agent | ⏳ Pendente | — | 0/25 | Paralelo com 2-4 |
 | **Sprint 6** — Controle de Acesso | ⏳ Pendente | — | 0/7 | — |
@@ -134,7 +134,25 @@ d:\VS Code\ERPView\
 │   │   │   ├── layout/                 ✅ Header, Sidebar, MainLayout
 │   │   │   └── filters/                ✅ FilterBar.tsx (básico)
 │   │   ├── hooks/
-│   │   │   ├── useKPIs.ts              ✅ (básico — ⚠️ BUG de fallback — ver bugs)
+│   │   │   ├── useKPIs.ts              ✅ Corrigido na Sprint 2 (transformToKPIs p/ 18 módulos)
+│   │   │   ├── useVendas.ts            ✅ Criado na Sprint 2
+│   │   │   ├── useClientes.ts          ✅ Criado na Sprint 2
+│   │   │   ├── useCompras.ts           ✅ Criado na Sprint 2
+│   │   │   ├── useFornecedores.ts      ✅ Criado na Sprint 2
+│   │   │   ├── useEstoque.ts           ✅ Criado na Sprint 2
+│   │   │   ├── useProdutos.ts          ✅ Criado na Sprint 2
+│   │   │   ├── useProducao.ts          ✅ Criado na Sprint 2
+│   │   │   ├── useQualidade.ts         ✅ Criado na Sprint 2
+│   │   │   ├── useExpedicao.ts         ✅ Criado na Sprint 2
+│   │   │   ├── useManutencao.ts        ✅ Criado na Sprint 2
+│   │   │   ├── useReceber.ts           ✅ Criado na Sprint 2
+│   │   │   ├── usePagar.ts             ✅ Criado na Sprint 2
+│   │   │   ├── useFiscal.ts            ✅ Criado na Sprint 2
+│   │   │   ├── usePatrimonio.ts        ✅ Criado na Sprint 2
+│   │   │   ├── useFluxoCaixa.ts        ✅ Criado na Sprint 2
+│   │   │   ├── useDRE.ts               ✅ Criado na Sprint 2
+│   │   │   ├── useCustos.ts            ✅ Criado na Sprint 2
+│   │   │   ├── useRH.ts                ✅ Criado na Sprint 2
 │   │   │   ├── usePerfil.ts            ✅ Criado na Sprint 1
 │   │   │   └── useExport.ts            ✅
 │   │   ├── store/
@@ -156,7 +174,26 @@ d:\VS Code\ERPView\
 │   │       ├── mocks/                  ✅ MSW handlers configurados
 │   │       ├── infra/                  ✅ Testes de infra (Sprint 0)
 │   │       ├── hooks/
-│   │       │   └── usePerfil.test.tsx  ✅ 3 testes (Sprint 1)
+│   │       │   ├── useVendas.test.tsx         ✅ 3 testes (Sprint 2)
+│   │       │   ├── useClientes.test.tsx       ✅ 3 testes (Sprint 2)
+│   │       │   ├── useCompras.test.tsx        ✅ 3 testes (Sprint 2)
+│   │       │   ├── useFornecedores.test.tsx   ✅ 2 testes (Sprint 2)
+│   │       │   ├── useEstoque.test.tsx        ✅ 3 testes (Sprint 2)
+│   │       │   ├── useProdutos.test.tsx       ✅ 2 testes (Sprint 2)
+│   │       │   ├── useProducao.test.tsx       ✅ 3 testes (Sprint 2)
+│   │       │   ├── useQualidade.test.tsx      ✅ 2 testes (Sprint 2)
+│   │       │   ├── useExpedicao.test.tsx      ✅ 2 testes (Sprint 2)
+│   │       │   ├── useManutencao.test.tsx     ✅ 3 testes (Sprint 2)
+│   │       │   ├── useReceber.test.tsx        ✅ 3 testes (Sprint 2)
+│   │       │   ├── usePagar.test.tsx          ✅ 2 testes (Sprint 2)
+│   │       │   ├── useFiscal.test.tsx         ✅ 2 testes (Sprint 2)
+│   │       │   ├── usePatrimonio.test.tsx     ✅ 2 testes (Sprint 2)
+│   │       │   ├── useFluxoCaixa.test.tsx     ✅ 3 testes (Sprint 2)
+│   │       │   ├── useDRE.test.tsx            ✅ 2 testes (Sprint 2)
+│   │       │   ├── useCustos.test.tsx         ✅ 2 testes (Sprint 2)
+│   │       │   ├── useRH.test.tsx             ✅ 3 testes (Sprint 2)
+│   │       │   ├── useKPIs.test.tsx           ✅ 3 testes (Sprint 2)
+│   │       │   └── usePerfil.test.tsx         ✅ 3 testes (Sprint 1)
 │   │       ├── store/
 │   │       │   └── authStore.test.ts   ✅ 5 testes (Sprint 1)
 │   │       └── pages/
@@ -202,40 +239,14 @@ cr-service/                             ⏳ A criar na Sprint 7
 
 ---
 
-## ⚠️ Bugs Conhecidos (resolver na Sprint 2)
+## ⚠️ Bugs Conhecidos
 
-### BUG 1 — Fallback KPI não funciona
-**Arquivo:** `frontend/src/hooks/useKPIs.ts`  
-**Problema:** Quando uma query Supabase falha (tabela inexistente, erro de RLS, etc.), o hook retorna `[]` (array vazio). Como `[]` é truthy em JS, o padrão `kpis ?? mockKPIs` nas páginas **nunca usa o mock** — exibe lista vazia.  
-**Impacto:** Todas as páginas com `useKPIs` mostram KPIs em branco ao invés do mock.  
-**Correção:** Alterar o retorno em caso de erro para `null` em vez de `[]`, ou usar `data?.length ? data : mockKPIs`.
+**Todos os bugs da Sprint 2 foram resolvidos em 2026-05-21.**
 
-```typescript
-// ATUAL (bugado):
-if (error) {
-  console.error(...);
-  return [];  // ← [] é truthy, fallback nunca dispara
-}
-
-// CORRETO:
-if (error) throw error;  // deixa React Query tratar via isError
-// ou: return null;
-```
-
-### BUG 2 — Mapeamento de tabela `rh` incorreto
-**Arquivo:** `frontend/src/hooks/useKPIs.ts` linha 26  
-**Problema:** `rh: 'rh'` mas a tabela no DB é `rh_colaboradores`.  
-**Correção:** Alterar para `rh: 'rh_colaboradores'`.
-
-### BUG 3 — Tabela `pedidos_compra` inexistente
-**Arquivo:** `frontend/src/hooks/useKPIs.ts` linha 12  
-**Problema:** `compras: 'pedidos_compra'` mas esta tabela não existe no schema atual.  
-**Correção:** Criar migration SQL adicionando a tabela `pedidos_compra` com RLS, ou redirecionar para tabela existente.
-
-### BUG 4 — `transformToKPIs()` retorna `[]` para quase todos os módulos
-**Arquivo:** `frontend/src/hooks/useKPIs.ts` linhas 57-74  
-**Problema:** O `switch` só trata o caso `dashboard` — todos os outros módulos caem no `default: return []`. Os dados são buscados mas descartados na transformação.  
-**Correção:** Implementar transformação real por módulo na Sprint 2.
+- ✅ BUG 1 — Fallback KPI: agora usa `throw error` (React Query trata via `isError`)
+- ✅ BUG 2 — Mapeamento `rh` corrigido para `rh_colaboradores`
+- ✅ BUG 3 — Tabela `pedidos_compra` marcada como `MISSING_TABLES` com erro controlado
+- ✅ BUG 4 — `transformToKPIs()` implementado para todos os 18 módulos
 
 ---
 
@@ -260,13 +271,13 @@ if (error) throw error;  // deixa React Query tratar via isError
 - **2026-05-21:** Sprint 0 concluída — ambiente de testes pronto (Vitest + Testing Library + MSW).
 - **2026-05-21:** Sprint 1 concluída — tipos Supabase gerados, authStore refatorado, usePerfil criado, Login atualizado. 9/9 testes passando.
 - **2026-05-21:** Supabase MCP instalado e configurado. Diagnóstico de tabelas realizado via `test-tables.js`.
-- **2026-05-21:** Análise de `useKPIs.ts` revelou 4 bugs críticos que impedem o fallback para mock data. Corrigir como **primeira ação da Sprint 2**.
-- **Próximo loop:** Sprint 2 — Hooks de Dados (começar corrigindo os 4 bugs acima)
+- **2026-05-21:** Sprint 2 concluída — 18 hooks de dados criados, 4 bugs do useKPIs corrigidos, 48 novos testes passando. Total acumulado: 62 testes.
+- **Próximo loop:** Sprint 3 — Páginas Reais (migrar 18 páginas de mock para dados reais)
 
 ---
 
 ## Progresso Total
 
-**Testes:** 14 / 164  
-**Sprints concluídas:** 2 / 10  
-**Última atualização:** 2026-05-21T15:00 (BRT)
+**Testes:** 62 / 164  
+**Sprints concluídas:** 3 / 10  
+**Última atualização:** 2026-05-21T15:41 (BRT)
