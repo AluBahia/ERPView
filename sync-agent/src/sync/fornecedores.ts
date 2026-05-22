@@ -12,20 +12,8 @@ interface FornecedorSQL {
   estado: string;
   email?: string;
   telefone?: string;
-  ativo: boolean;
-  data_alteracao?: Date;
-}
-
-interface FornecedorSupabase {
-  id: string;
-  nome: string;
-  cnpj: string;
-  cidade: string;
-  estado: string;
-  email: string | null;
-  telefone: string | null;
-  ativo: boolean;
-  updated_at: string | null;
+  ativo: string;
+  data_atualizacao?: Date;
 }
 
 export async function syncFornecedores(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -33,26 +21,26 @@ export async function syncFornecedores(): Promise<{ inseridos: number; atualizad
 
   const fonte = await retry(() => query<FornecedorSQL>(`
     SELECT 
-      CAST(id AS VARCHAR(36)) AS id,
-      nome,
-      cnpj,
-      cidade,
-      estado,
-      email,
-      telefone,
-      ativo,
-      data_alteracao
-    FROM fornecedores
-    WHERE ativo = 1
+      CAST(Fornecedor AS VARCHAR(36)) AS id,
+      Nome AS nome,
+      CgcCpf AS cnpj,
+      Cidade AS cidade,
+      Estado AS estado,
+      EMail AS email,
+      Telefone AS telefone,
+      Ativo AS ativo,
+      DataAtualizacao AS data_atualizacao
+    FROM Fornecedor
+    WHERE Ativo = 'S'
   `), { label: 'query-fornecedores' });
 
   const { data: destinoData } = await supabase.from('fornecedores').select('*');
-  const destino: FornecedorSupabase[] = (destinoData || []).map((d: any) => ({
+  const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    nome: d.nome,
-    cnpj: d.cnpj,
-    cidade: d.cidade,
-    estado: d.estado,
+    nome: d.nome ?? '',
+    cnpj: d.cnpj ?? '',
+    cidade: d.cidade ?? '',
+    estado: d.estado ?? '',
     email: d.email ?? null,
     telefone: d.telefone ?? null,
     ativo: d.ativo ?? true,
@@ -61,14 +49,14 @@ export async function syncFornecedores(): Promise<{ inseridos: number; atualizad
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    nome: f.nome,
-    cnpj: f.cnpj,
-    cidade: f.cidade,
-    estado: f.estado,
+    nome: f.nome ?? '',
+    cnpj: f.cnpj ?? '',
+    cidade: f.cidade ?? '',
+    estado: f.estado ?? '',
     email: f.email ?? null,
     telefone: f.telefone ?? null,
-    ativo: f.ativo,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    ativo: f.ativo === 'S',
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');

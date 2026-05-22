@@ -11,8 +11,8 @@ interface ProdutoSQL {
   unidade: string;
   preco_venda: number;
   custo_medio: number;
-  ativo: boolean;
-  data_alteracao?: Date;
+  ativo: string;
+  data_atualizacao?: Date;
 }
 
 export async function syncProdutos(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -20,39 +20,39 @@ export async function syncProdutos(): Promise<{ inseridos: number; atualizados: 
 
   const fonte = await retry(() => query<ProdutoSQL>(`
     SELECT 
-      CAST(id AS VARCHAR(36)) AS id,
-      codigo,
-      descricao,
-      unidade,
-      preco_venda,
-      custo_medio,
-      ativo,
-      data_alteracao
-    FROM produtos
-    WHERE ativo = 1
+      CAST(Produto AS VARCHAR(36)) AS id,
+      Referencia AS codigo,
+      Nome AS descricao,
+      Unidade AS unidade,
+      Preco1 AS preco_venda,
+      CustoRep AS custo_medio,
+      Ativo AS ativo,
+      DataAtualizacao AS data_atualizacao
+    FROM Produtos
+    WHERE Ativo = 'S'
   `), { label: 'query-produtos' });
 
   const { data: destinoData } = await supabase.from('produtos').select('*');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    codigo: d.codigo,
-    descricao: d.descricao,
-    unidade: d.unidade,
-    preco_venda: d.preco_venda,
-    custo_medio: d.custo_medio,
+    codigo: d.codigo ?? '',
+    descricao: d.descricao ?? '',
+    unidade: d.unidade ?? '',
+    preco_venda: d.preco_venda ?? 0,
+    custo_medio: d.custo_medio ?? 0,
     ativo: d.ativo ?? true,
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    codigo: f.codigo,
-    descricao: f.descricao,
-    unidade: f.unidade,
-    preco_venda: f.preco_venda,
-    custo_medio: f.custo_medio,
-    ativo: f.ativo,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    codigo: f.codigo ?? '',
+    descricao: f.descricao ?? '',
+    unidade: f.unidade ?? '',
+    preco_venda: f.preco_venda ?? 0,
+    custo_medio: f.custo_medio ?? 0,
+    ativo: f.ativo === 'S',
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');

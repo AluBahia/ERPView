@@ -10,7 +10,7 @@ interface EstoqueSQL {
   qtd_minima: number;
   qtd_maxima: number;
   deposito: string;
-  data_alteracao?: Date;
+  data_atualizacao?: Date;
 }
 
 export async function syncEstoque(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -18,46 +18,46 @@ export async function syncEstoque(): Promise<{ inseridos: number; atualizados: n
 
   const fonte = await retry(() => query<EstoqueSQL>(`
     SELECT 
-      CAST(produto_id AS VARCHAR(36)) AS produto_id,
-      quantidade,
-      qtd_minima,
-      qtd_maxima,
-      deposito,
-      data_alteracao
-    FROM estoque
+      CAST(Produto AS VARCHAR(36)) AS produto_id,
+      Quantidade AS quantidade,
+      0 AS qtd_minima,
+      QuantidadeDisp AS qtd_maxima,
+      '' AS deposito,
+      NULL AS data_atualizacao
+    FROM EstoqueProduto
   `), { label: 'query-estoque' });
 
-  const { data: destinoData } = await supabase.from('estoque').select('*');
+  const { data: destinoData } = await supabase.from('itens_estoque').select('*');
   const destino = (destinoData || []).map((d: any) => ({
     produto_id: String(d.produto_id),
-    quantidade: d.quantidade,
-    qtd_minima: d.qtd_minima,
-    qtd_maxima: d.qtd_maxima,
-    deposito: d.deposito,
+    quantidade: d.quantidade ?? 0,
+    qtd_minima: d.qtd_minima ?? 0,
+    qtd_maxima: d.qtd_maxima ?? 0,
+    deposito: d.deposito ?? '',
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     produto_id: String(f.produto_id),
-    quantidade: f.quantidade,
-    qtd_minima: f.qtd_minima,
-    qtd_maxima: f.qtd_maxima,
-    deposito: f.deposito,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    quantidade: f.quantidade ?? 0,
+    qtd_minima: f.qtd_minima ?? 0,
+    qtd_maxima: f.qtd_maxima ?? 0,
+    deposito: f.deposito ?? '',
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'produto_id', 'updated_at');
 
   if (delta.inseridos.length > 0) {
-    await retry(() => supabase.from('estoque').insert(delta.inseridos).then(r => r as any), { label: 'insert-estoque' });
+    await retry(() => supabase.from('itens_estoque').insert(delta.inseridos).then(r => r as any), { label: 'insert-estoque' });
   }
   if (delta.atualizados.length > 0) {
     for (const e of delta.atualizados) {
-      await retry(() => supabase.from('estoque').update(e).eq('produto_id', e.produto_id).then(r => r as any), { label: 'update-estoque' });
+      await retry(() => supabase.from('itens_estoque').update(e).eq('produto_id', e.produto_id).then(r => r as any), { label: 'update-estoque' });
     }
   }
   if (delta.deletados.length > 0) {
-    await retry(() => supabase.from('estoque').delete().in('produto_id', delta.deletados).then(r => r as any), { label: 'delete-estoque' });
+    await retry(() => supabase.from('itens_estoque').delete().in('produto_id', delta.deletados).then(r => r as any), { label: 'delete-estoque' });
   }
 
   logger.info(`Estoque: +${delta.inseridos.length} ~${delta.atualizados.length} -${delta.deletados.length}`);

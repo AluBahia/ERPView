@@ -9,25 +9,10 @@ interface OrdemServicoSQL {
   numero: string;
   tipo: string;
   status: string;
-  equipamento?: string;
   descricao?: string;
-  tecnico?: string;
   data_abertura?: Date;
   data_conclusao?: Date;
-  data_alteracao?: Date;
-}
-
-interface OrdemServicoSupabase {
-  id: string;
-  numero: string;
-  tipo: string;
-  status: string;
-  equipamento: string | null;
-  descricao: string | null;
-  tecnico: string | null;
-  data_abertura: string | null;
-  data_conclusao: string | null;
-  updated_at: string | null;
+  data_atualizacao?: Date;
 }
 
 export async function syncManutencao(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -35,29 +20,25 @@ export async function syncManutencao(): Promise<{ inseridos: number; atualizados
 
   const fonte = await retry(() => query<OrdemServicoSQL>(`
     SELECT
-      CAST(id AS VARCHAR(36)) AS id,
-      numero,
-      tipo,
-      status,
-      equipamento,
-      descricao,
-      tecnico,
-      data_abertura,
-      data_conclusao,
-      data_alteracao
-    FROM ordens_servico
-    WHERE status NOT IN ('Cancelado')
+      CAST(Codigo AS VARCHAR(36)) AS id,
+      CAST(Codigo AS VARCHAR) AS numero,
+      CAST(TipoOS AS VARCHAR) AS tipo,
+      Status AS status,
+      Descricao1 AS descricao,
+      Data AS data_abertura,
+      DataFechamento AS data_conclusao,
+      DataAtualizacao AS data_atualizacao
+    FROM OrdemServico
+    WHERE Status NOT IN ('Cancelado')
   `), { label: 'query-manutencao' });
 
   const { data: destinoData } = await supabase.from('ordens_servico').select('*');
-  const destino: OrdemServicoSupabase[] = (destinoData || []).map((d: any) => ({
+  const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    numero: d.numero,
-    tipo: d.tipo,
-    status: d.status,
-    equipamento: d.equipamento ?? null,
+    numero: d.numero ?? '',
+    tipo: d.tipo ?? '',
+    status: d.status ?? '',
     descricao: d.descricao ?? null,
-    tecnico: d.tecnico ?? null,
     data_abertura: d.data_abertura ?? null,
     data_conclusao: d.data_conclusao ?? null,
     updated_at: d.updated_at ?? null,
@@ -65,15 +46,13 @@ export async function syncManutencao(): Promise<{ inseridos: number; atualizados
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    numero: f.numero,
-    tipo: f.tipo,
-    status: f.status,
-    equipamento: f.equipamento ?? null,
+    numero: f.numero ?? '',
+    tipo: f.tipo ?? '',
+    status: f.status ?? '',
     descricao: f.descricao ?? null,
-    tecnico: f.tecnico ?? null,
     data_abertura: f.data_abertura ? f.data_abertura.toISOString() : null,
     data_conclusao: f.data_conclusao ? f.data_conclusao.toISOString() : null,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');

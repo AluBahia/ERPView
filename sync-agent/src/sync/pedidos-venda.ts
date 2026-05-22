@@ -12,7 +12,7 @@ interface PedidoSQL {
   valor_total: number;
   status: string;
   data_emissao: string;
-  data_alteracao?: Date;
+  data_atualizacao?: Date;
 }
 
 export async function syncPedidosVenda(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -20,38 +20,39 @@ export async function syncPedidosVenda(): Promise<{ inseridos: number; atualizad
 
   const fonte = await retry(() => query<PedidoSQL>(`
     SELECT 
-      CAST(id AS VARCHAR(36)) AS id,
-      numero,
-      CAST(cliente_id AS VARCHAR(36)) AS cliente_id,
-      CAST(vendedor_id AS VARCHAR(36)) AS vendedor_id,
-      valor_total,
-      status,
-      CONVERT(VARCHAR(10), data_emissao, 120) AS data_emissao,
-      data_alteracao
-    FROM pedidos_venda
+      CAST(Pedido AS VARCHAR(36)) AS id,
+      CAST(Pedido AS VARCHAR) AS numero,
+      CAST(Cliente AS VARCHAR(36)) AS cliente_id,
+      CAST(Vendedor AS VARCHAR(36)) AS vendedor_id,
+      ValorNF AS valor_total,
+      Status AS status,
+      CONVERT(VARCHAR(10), DataEmissao, 120) AS data_emissao,
+      UltimaAlteracao AS data_atualizacao
+    FROM Vendas
+    WHERE Status NOT IN ('Cancelado')
   `), { label: 'query-pedidos-venda' });
 
   const { data: destinoData } = await supabase.from('pedidos_venda').select('*');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    numero: d.numero,
-    cliente_id: d.cliente_id,
-    vendedor_id: d.vendedor_id,
-    valor_total: d.valor_total,
-    status: d.status,
-    data_emissao: d.data_emissao,
+    numero: d.numero ?? '',
+    cliente_id: String(d.cliente_id ?? '0'),
+    vendedor_id: String(d.vendedor_id ?? '0'),
+    valor_total: d.valor_total ?? 0,
+    status: d.status ?? '',
+    data_emissao: d.data_emissao ?? '',
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    numero: f.numero,
-    cliente_id: f.cliente_id,
-    vendedor_id: f.vendedor_id,
-    valor_total: f.valor_total,
-    status: f.status,
-    data_emissao: f.data_emissao,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    numero: f.numero ?? '',
+    cliente_id: f.cliente_id ?? '0',
+    vendedor_id: f.vendedor_id ?? '0',
+    valor_total: f.valor_total ?? 0,
+    status: f.status ?? '',
+    data_emissao: f.data_emissao ?? '',
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');

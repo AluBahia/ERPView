@@ -4,71 +4,51 @@ import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
 
-interface ColaboradorSQL {
+interface FuncionarioSQL {
   id: string;
   matricula: string;
   nome: string;
   cargo: string;
-  departamento: string;
-  salario: number;
-  data_admissao: Date;
+  data_admissao?: Date;
   status: string;
-  data_alteracao?: Date;
-}
-
-interface ColaboradorSupabase {
-  id: string;
-  matricula: string;
-  nome: string;
-  cargo: string;
-  departamento: string;
-  salario: number;
-  data_admissao: string;
-  status: string;
-  updated_at: string | null;
+  data_atualizacao?: Date;
 }
 
 export async function syncRH(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
-  logger.info('Iniciando sync de colaboradores (RH)');
+  logger.info('Iniciando sync de funcionários (RH)');
 
-  const fonte = await retry(() => query<ColaboradorSQL>(`
+  const fonte = await retry(() => query<FuncionarioSQL>(`
     SELECT
-      CAST(id AS VARCHAR(36)) AS id,
-      matricula,
-      nome,
-      cargo,
-      departamento,
-      salario,
-      data_admissao,
-      status,
-      data_alteracao
-    FROM colaboradores
-    WHERE status NOT IN ('Desligado')
+      CAST(Matricula AS VARCHAR(36)) AS id,
+      CAST(Matricula AS VARCHAR) AS matricula,
+      Nome AS nome,
+      CAST(Cargo AS VARCHAR) AS cargo,
+      AdmData AS data_admissao,
+      AdmStatus AS status,
+      DataMov AS data_atualizacao
+    FROM Funcionario
+    WHERE AdmStatus NOT IN ('Desligado')
   `), { label: 'query-rh' });
 
   const { data: destinoData } = await supabase.from('rh_colaboradores').select('*');
-  const destino: ColaboradorSupabase[] = (destinoData || []).map((d: any) => ({
+  const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    matricula: d.matricula,
-    nome: d.nome,
-    cargo: d.cargo,
-    departamento: d.departamento,
-    salario: d.salario,
-    data_admissao: d.data_admissao,
-    status: d.status,
+    matricula: d.matricula ?? '',
+    nome: d.nome ?? '',
+    cargo: d.cargo ?? '',
+    data_admissao: d.data_admissao ?? null,
+    status: d.status ?? '',
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    matricula: f.matricula,
-    nome: f.nome,
-    cargo: f.cargo,
-    departamento: f.departamento,
-    salario: f.salario,
-    data_admissao: f.data_admissao instanceof Date ? f.data_admissao.toISOString().split('T')[0] : String(f.data_admissao),
-    status: f.status,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    matricula: f.matricula ?? '',
+    nome: f.nome ?? '',
+    cargo: f.cargo ?? '',
+    data_admissao: f.data_admissao ? f.data_admissao.toISOString().split('T')[0] : null,
+    status: f.status ?? '',
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');
@@ -79,17 +59,17 @@ export async function syncRH(): Promise<{ inseridos: number; atualizados: number
       created_at: new Date().toISOString(),
     }));
     await retry(() => supabase.from('rh_colaboradores').insert(toInsert).then(r => r as any), { label: 'insert-rh' });
-    logger.info(`Inseridos ${delta.inseridos.length} colaboradores`);
+    logger.info(`Inseridos ${delta.inseridos.length} funcionários`);
   }
 
   if (delta.atualizados.length > 0) {
-    for (const colaborador of delta.atualizados) {
+    for (const func of delta.atualizados) {
       await retry(
-        () => supabase.from('rh_colaboradores').update(colaborador).eq('id', colaborador.id).then(r => r as any),
+        () => supabase.from('rh_colaboradores').update(func).eq('id', func.id).then(r => r as any),
         { label: 'update-rh' }
       );
     }
-    logger.info(`Atualizados ${delta.atualizados.length} colaboradores`);
+    logger.info(`Atualizados ${delta.atualizados.length} funcionários`);
   }
 
   if (delta.deletados.length > 0) {
@@ -97,7 +77,7 @@ export async function syncRH(): Promise<{ inseridos: number; atualizados: number
       () => supabase.from('rh_colaboradores').update({ status: 'Desligado' }).in('id', delta.deletados).then(r => r as any),
       { label: 'soft-delete-rh' }
     );
-    logger.info(`Marcados como Desligados ${delta.deletados.length} colaboradores`);
+    logger.info(`Marcados como Desligados ${delta.deletados.length} funcionários`);
   }
 
   return {

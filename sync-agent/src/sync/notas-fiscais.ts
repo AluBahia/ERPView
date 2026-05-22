@@ -12,8 +12,8 @@ interface NotaFiscalSQL {
   valor_total: number;
   data_emissao: string;
   status: string;
-  tipo: 'entrada' | 'saida';
-  data_alteracao?: Date;
+  tipo: string;
+  data_atualizacao?: Date;
 }
 
 export async function syncNotasFiscais(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -21,41 +21,41 @@ export async function syncNotasFiscais(): Promise<{ inseridos: number; atualizad
 
   const fonte = await retry(() => query<NotaFiscalSQL>(`
     SELECT 
-      CAST(id AS VARCHAR(36)) AS id,
-      numero,
-      serie,
-      CAST(entidade_id AS VARCHAR(36)) AS entidade_id,
-      valor_total,
-      CONVERT(VARCHAR(10), data_emissao, 120) AS data_emissao,
-      status,
-      tipo,
-      data_alteracao
-    FROM notas_fiscais
+      CAST(Numero AS VARCHAR(36)) AS id,
+      CAST(Numero AS VARCHAR) AS numero,
+      Serie AS serie,
+      CAST(COALESCE(Codigo, 0) AS VARCHAR(36)) AS entidade_id,
+      COALESCE(ValorTotal, 0) AS valor_total,
+      CONVERT(VARCHAR(10), DataEmissao, 120) AS data_emissao,
+      Status AS status,
+      Origem AS tipo,
+      DataAtualizacao AS data_atualizacao
+    FROM CtrlNotaFiscal
   `), { label: 'query-notas-fiscais' });
 
   const { data: destinoData } = await supabase.from('notas_fiscais').select('*');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    numero: d.numero,
-    serie: d.serie,
-    entidade_id: d.entidade_id,
-    valor_total: d.valor_total,
-    data_emissao: d.data_emissao,
-    status: d.status,
-    tipo: d.tipo,
+    numero: d.numero ?? '',
+    serie: d.serie ?? '',
+    entidade_id: d.entidade_id ?? '0',
+    valor_total: d.valor_total ?? 0,
+    data_emissao: d.data_emissao ?? '',
+    status: d.status ?? '',
+    tipo: d.tipo ?? 'Saída',
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    numero: f.numero,
-    serie: f.serie,
-    entidade_id: f.entidade_id,
-    valor_total: f.valor_total,
-    data_emissao: f.data_emissao,
-    status: f.status,
-    tipo: f.tipo,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    numero: f.numero ?? '',
+    serie: f.serie ?? '',
+    entidade_id: f.entidade_id ?? '0',
+    valor_total: f.valor_total ?? 0,
+    data_emissao: f.data_emissao ?? '',
+    status: f.status ?? '',
+    tipo: f.tipo ?? 'Saída',
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');

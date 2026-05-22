@@ -11,27 +11,10 @@ interface BemPatrimonialSQL {
   categoria: string;
   localizacao?: string;
   valor_aquisicao: number;
-  valor_atual?: number;
-  data_aquisicao: Date;
-  vida_util_anos?: number;
+  data_aquisicao?: Date;
   taxa_depreciacao?: number;
   status: string;
-  data_alteracao?: Date;
-}
-
-interface BemPatrimonialSupabase {
-  id: string;
-  codigo: string;
-  descricao: string;
-  categoria: string;
-  localizacao: string | null;
-  valor_aquisicao: number;
-  valor_atual: number | null;
-  data_aquisicao: string;
-  vida_util_anos: number | null;
-  taxa_depreciacao: number | null;
-  status: string;
-  updated_at: string | null;
+  data_atualizacao?: Date;
 }
 
 export async function syncPatrimonio(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -39,51 +22,45 @@ export async function syncPatrimonio(): Promise<{ inseridos: number; atualizados
 
   const fonte = await retry(() => query<BemPatrimonialSQL>(`
     SELECT
-      CAST(id AS VARCHAR(36)) AS id,
-      codigo,
-      descricao,
-      categoria,
-      localizacao,
-      valor_aquisicao,
-      valor_atual,
-      data_aquisicao,
-      vida_util_anos,
-      taxa_depreciacao,
-      status,
-      data_alteracao
-    FROM bens_patrimoniais
-    WHERE status NOT IN ('Baixado')
+      CAST(Codigo AS VARCHAR(36)) AS id,
+      Referencia AS codigo,
+      Nome AS descricao,
+      CAST(Grupo AS VARCHAR) AS categoria,
+      CAST(Localizacao AS VARCHAR) AS localizacao,
+      ValorAquisicao AS valor_aquisicao,
+      DataAtivacao AS data_aquisicao,
+      TaxaDep AS taxa_depreciacao,
+      Situacao AS status,
+      DataUltMovimentacao AS data_atualizacao
+    FROM BemPatrimonial
+    WHERE Situacao NOT IN ('Baixado')
   `), { label: 'query-patrimonio' });
 
   const { data: destinoData } = await supabase.from('bens_patrimoniais').select('*');
-  const destino: BemPatrimonialSupabase[] = (destinoData || []).map((d: any) => ({
+  const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    codigo: d.codigo,
-    descricao: d.descricao,
-    categoria: d.categoria,
+    codigo: d.codigo ?? '',
+    descricao: d.descricao ?? '',
+    categoria: d.categoria ?? '',
     localizacao: d.localizacao ?? null,
-    valor_aquisicao: d.valor_aquisicao,
-    valor_atual: d.valor_atual ?? null,
-    data_aquisicao: d.data_aquisicao,
-    vida_util_anos: d.vida_util_anos ?? null,
+    valor_aquisicao: d.valor_aquisicao ?? 0,
+    data_aquisicao: d.data_aquisicao ?? null,
     taxa_depreciacao: d.taxa_depreciacao ?? null,
-    status: d.status,
+    status: d.status ?? '',
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    codigo: f.codigo,
-    descricao: f.descricao,
-    categoria: f.categoria,
+    codigo: f.codigo ?? '',
+    descricao: f.descricao ?? '',
+    categoria: f.categoria ?? '',
     localizacao: f.localizacao ?? null,
-    valor_aquisicao: f.valor_aquisicao,
-    valor_atual: f.valor_atual ?? null,
-    data_aquisicao: f.data_aquisicao instanceof Date ? f.data_aquisicao.toISOString().split('T')[0] : String(f.data_aquisicao),
-    vida_util_anos: f.vida_util_anos ?? null,
+    valor_aquisicao: f.valor_aquisicao ?? 0,
+    data_aquisicao: f.data_aquisicao ? f.data_aquisicao.toISOString().split('T')[0] : null,
     taxa_depreciacao: f.taxa_depreciacao ?? null,
-    status: f.status,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    status: f.status ?? '',
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');

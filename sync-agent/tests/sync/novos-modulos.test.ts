@@ -43,7 +43,7 @@ describe('syncProducao', () => {
     vi.mocked(query).mockResolvedValue([{
       id: '1', numero: 'OP-001', produto_id: '10',
       quantidade: 100, status: 'Em Andamento',
-      data_inicio: new Date(), data_alteracao: new Date(),
+      data_inicio: new Date(), data_atualizacao: new Date(),
     }]);
     const result = await syncProducao();
     expect(result).toHaveProperty('inseridos');
@@ -60,7 +60,7 @@ describe('syncExpedicao', () => {
   it('processa pedidos de expedição com campos obrigatórios', async () => {
     vi.mocked(query).mockResolvedValue([{
       id: '1', numero: 'EXP-001', cliente_id: '5',
-      status: 'Aguardando', data_pedido: new Date(), data_alteracao: new Date(),
+      status: 'Aguardando', data_pedido: new Date(), data_atualizacao: new Date(),
     }]);
     const result = await syncExpedicao();
     expect(result).toHaveProperty('inseridos');
@@ -77,7 +77,7 @@ describe('syncManutencao', () => {
   it('processa ordens de serviço com campos obrigatórios', async () => {
     vi.mocked(query).mockResolvedValue([{
       id: '1', numero: 'OS-001', tipo: 'Preventiva',
-      status: 'Aberta', data_abertura: new Date(), data_alteracao: new Date(),
+      status: 'Aberta', data_abertura: new Date(), data_atualizacao: new Date(),
     }]);
     const result = await syncManutencao();
     expect(result).toHaveProperty('inseridos');
@@ -94,9 +94,8 @@ describe('syncRH', () => {
   it('processa colaboradores com campos obrigatórios', async () => {
     vi.mocked(query).mockResolvedValue([{
       id: '1', matricula: 'C001', nome: 'João Silva',
-      cargo: 'Analista', departamento: 'TI',
-      salario: 5000, data_admissao: new Date('2020-01-01'),
-      status: 'Ativo', data_alteracao: new Date(),
+      cargo: 'Analista', data_admissao: new Date('2020-01-01'),
+      status: 'Ativo', data_atualizacao: new Date(),
     }]);
     const result = await syncRH();
     expect(result).toHaveProperty('inseridos');
@@ -115,7 +114,7 @@ describe('syncPatrimonio', () => {
       id: '1', codigo: 'BP-001', descricao: 'Servidor Dell',
       categoria: 'TI', valor_aquisicao: 15000,
       data_aquisicao: new Date('2022-06-01'),
-      status: 'Ativo', data_alteracao: new Date(),
+      status: 'Ativo', data_atualizacao: new Date(),
     }]);
     const result = await syncPatrimonio();
     expect(result).toHaveProperty('inseridos');

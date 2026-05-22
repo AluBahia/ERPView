@@ -31,8 +31,8 @@ const mockFornecedor = {
   estado: 'SP',
   email: 'contato@teste.com',
   telefone: '(11) 9999-0000',
-  ativo: true,
-  data_alteracao: new Date('2026-01-15'),
+  ativo: 'S',
+  data_atualizacao: new Date('2026-01-15'),
 };
 
 describe('syncFornecedores', () => {

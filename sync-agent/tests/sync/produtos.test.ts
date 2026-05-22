@@ -7,7 +7,7 @@ vi.mock('mssql', () => ({
       request: vi.fn().mockReturnValue({
         query: vi.fn().mockResolvedValue({
           recordset: [
-            { id: '1', codigo: 'P001', descricao: 'Produto A', unidade: 'UN', preco_venda: 100, custo_medio: 60, ativo: true, data_alteracao: new Date('2024-01-01') },
+            { id: '1', codigo: 'P001', descricao: 'Produto A', unidade: 'UN', preco_venda: 100, custo_medio: 60, ativo: 'S', data_atualizacao: new Date('2024-01-01') },
           ],
         }),
       }),

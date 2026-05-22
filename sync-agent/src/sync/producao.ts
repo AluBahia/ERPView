@@ -14,20 +14,7 @@ interface OrdemProducaoSQL {
   data_previsao?: Date;
   data_conclusao?: Date;
   linha?: string;
-  data_alteracao?: Date;
-}
-
-interface OrdemProducaoSupabase {
-  id: string;
-  numero: string;
-  produto_id: string;
-  quantidade: number;
-  status: string;
-  data_inicio: string | null;
-  data_previsao: string | null;
-  data_conclusao: string | null;
-  linha: string | null;
-  updated_at: string | null;
+  data_atualizacao?: Date;
 }
 
 export async function syncProducao(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -35,27 +22,27 @@ export async function syncProducao(): Promise<{ inseridos: number; atualizados: 
 
   const fonte = await retry(() => query<OrdemProducaoSQL>(`
     SELECT
-      CAST(id AS VARCHAR(36)) AS id,
-      numero,
-      CAST(produto_id AS VARCHAR(36)) AS produto_id,
-      quantidade,
-      status,
-      data_inicio,
-      data_previsao,
-      data_conclusao,
-      linha,
-      data_alteracao
-    FROM ordens_producao
-    WHERE status NOT IN ('Cancelado')
+      CAST(Codigo AS VARCHAR(36)) AS id,
+      CAST(Codigo AS VARCHAR) AS numero,
+      '' AS produto_id,
+      COALESCE(NULL, 0) AS quantidade,
+      Status AS status,
+      Data AS data_inicio,
+      NULL AS data_previsao,
+      DataBaixa AS data_conclusao,
+      CentroCusto AS linha,
+      DataBaixa AS data_atualizacao
+    FROM Producao
+    WHERE Status NOT IN ('Cancelado')
   `), { label: 'query-producao' });
 
   const { data: destinoData } = await supabase.from('ordens_producao').select('*');
-  const destino: OrdemProducaoSupabase[] = (destinoData || []).map((d: any) => ({
+  const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    numero: d.numero,
-    produto_id: String(d.produto_id),
-    quantidade: d.quantidade,
-    status: d.status,
+    numero: d.numero ?? '',
+    produto_id: String(d.produto_id ?? '0'),
+    quantidade: d.quantidade ?? 0,
+    status: d.status ?? '',
     data_inicio: d.data_inicio ?? null,
     data_previsao: d.data_previsao ?? null,
     data_conclusao: d.data_conclusao ?? null,
@@ -65,15 +52,15 @@ export async function syncProducao(): Promise<{ inseridos: number; atualizados: 
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    numero: f.numero,
-    produto_id: String(f.produto_id),
-    quantidade: f.quantidade,
-    status: f.status,
+    numero: f.numero ?? '',
+    produto_id: String(f.produto_id ?? '0'),
+    quantidade: f.quantidade ?? 0,
+    status: f.status ?? '',
     data_inicio: f.data_inicio ? f.data_inicio.toISOString() : null,
     data_previsao: f.data_previsao ? f.data_previsao.toISOString() : null,
     data_conclusao: f.data_conclusao ? f.data_conclusao.toISOString() : null,
     linha: f.linha ?? null,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');

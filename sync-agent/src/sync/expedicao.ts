@@ -14,20 +14,7 @@ interface PedidoExpedicaoSQL {
   data_previsao?: Date;
   data_entrega?: Date;
   peso_total?: number;
-  data_alteracao?: Date;
-}
-
-interface PedidoExpedicaoSupabase {
-  id: string;
-  numero: string;
-  cliente_id: string;
-  transportadora: string | null;
-  status: string;
-  data_pedido: string | null;
-  data_previsao: string | null;
-  data_entrega: string | null;
-  peso_total: number | null;
-  updated_at: string | null;
+  data_atualizacao?: Date;
 }
 
 export async function syncExpedicao(): Promise<{ inseridos: number; atualizados: number; deletados: number }> {
@@ -35,27 +22,27 @@ export async function syncExpedicao(): Promise<{ inseridos: number; atualizados:
 
   const fonte = await retry(() => query<PedidoExpedicaoSQL>(`
     SELECT
-      CAST(id AS VARCHAR(36)) AS id,
-      numero,
-      CAST(cliente_id AS VARCHAR(36)) AS cliente_id,
-      transportadora,
-      status,
-      data_pedido,
-      data_previsao,
-      data_entrega,
-      peso_total,
-      data_alteracao
-    FROM pedidos_expedicao
-    WHERE status NOT IN ('Cancelado')
+      CAST(Pedido AS VARCHAR(36)) AS id,
+      CAST(Pedido AS VARCHAR) AS numero,
+      CAST(Cliente AS VARCHAR(36)) AS cliente_id,
+      '' AS transportadora,
+      Status AS status,
+      DataPedido AS data_pedido,
+      NULL AS data_previsao,
+      DataEntrega AS data_entrega,
+      NULL AS peso_total,
+      FimProc AS data_atualizacao
+    FROM WMSExpedicao
+    WHERE Status NOT IN ('Cancelado')
   `), { label: 'query-expedicao' });
 
   const { data: destinoData } = await supabase.from('pedidos_expedicao').select('*');
-  const destino: PedidoExpedicaoSupabase[] = (destinoData || []).map((d: any) => ({
+  const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    numero: d.numero,
-    cliente_id: String(d.cliente_id),
+    numero: d.numero ?? '',
+    cliente_id: String(d.cliente_id ?? '0'),
     transportadora: d.transportadora ?? null,
-    status: d.status,
+    status: d.status ?? '',
     data_pedido: d.data_pedido ?? null,
     data_previsao: d.data_previsao ?? null,
     data_entrega: d.data_entrega ?? null,
@@ -65,15 +52,15 @@ export async function syncExpedicao(): Promise<{ inseridos: number; atualizados:
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    numero: f.numero,
-    cliente_id: String(f.cliente_id),
+    numero: f.numero ?? '',
+    cliente_id: String(f.cliente_id ?? '0'),
     transportadora: f.transportadora ?? null,
-    status: f.status,
+    status: f.status ?? '',
     data_pedido: f.data_pedido ? f.data_pedido.toISOString() : null,
     data_previsao: f.data_previsao ? f.data_previsao.toISOString() : null,
     data_entrega: f.data_entrega ? f.data_entrega.toISOString() : null,
     peso_total: f.peso_total ?? null,
-    updated_at: f.data_alteracao ? f.data_alteracao.toISOString() : null,
+    updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
   const delta = computeDelta(fonteNormalizada, destino, 'id', 'updated_at');
