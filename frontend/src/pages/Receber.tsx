@@ -14,7 +14,6 @@ import { useKPIs } from '../hooks/useKPIs';
 import { useReceber } from '../hooks/useReceber';
 import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
 import { ErrorState } from '../components/ui/ErrorState';
-import { EmptyState } from '../components/ui/EmptyState';
 import { statusToBadgeVariant } from '../lib/formatters';
 import { receberKPIs } from '../lib/mock-data/kpis';
 import type { TituloReceber } from '../types';

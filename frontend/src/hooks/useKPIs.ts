@@ -53,7 +53,7 @@ export function useKPIs(module: string) {
       }
 
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*')
         .limit(100);
 

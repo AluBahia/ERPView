@@ -55,7 +55,7 @@ const selectClasses =
 export function Header() {
   const location = useLocation();
   const { mobileMenuOpen, setMobileMenuOpen, factoryFloorActive, toggleFactoryFloor } = useUIStore();
-  const { user, logout } = useAuthStore();
+  const { user, perfil, logout } = useAuthStore();
   const { dateRange, filial, setDateRange, setFilial } = useFilterStore();
 
   const pageLabel = useMemo(() => getLabelForPath(location.pathname), [location.pathname]);
@@ -130,10 +130,10 @@ export function Header() {
         {user && (
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue/15 text-blue text-xs font-semibold">
-              {user.initials}
+              {perfil?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
             </span>
             <span className="hidden sm:block text-sm text-text-secondary max-w-[120px] truncate">
-              {user.name}
+              {perfil?.nome || user.email?.split('@')[0] || 'Usuário'}
             </span>
           </div>
         )}

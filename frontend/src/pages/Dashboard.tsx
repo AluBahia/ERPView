@@ -9,7 +9,6 @@ import { GaugeChart } from '../components/charts/GaugeChart';
 import { useKPIs } from '../hooks/useKPIs';
 import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
 import { ErrorState } from '../components/ui/ErrorState';
-import { EmptyState } from '../components/ui/EmptyState';
 import {
   faturamentoMensal,
   topVendedores,

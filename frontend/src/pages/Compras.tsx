@@ -48,19 +48,6 @@ const evolucaoPrecos = [
   { month: 'May', aco: 5050, quimico: 3600 },
 ];
 
-const mockPedidosCompra: Record<string, unknown>[] = [
-  { id: '1', fornecedor: 'Aço Forte Ltda', categoria: 'Matéria-prima', data: '07/05/2026', valor: 'R$ 82.400', status: 'Pendente' },
-  { id: '2', fornecedor: 'Química Beta', categoria: 'Insumos', data: '06/05/2026', valor: 'R$ 15.200', status: 'Aprovado' },
-  { id: '3', fornecedor: 'PackMaster', categoria: 'Embalagem', data: '05/05/2026', valor: 'R$ 34.800', status: 'Recebido' },
-  { id: '4', fornecedor: 'Componentes Max', categoria: 'Componentes', data: '04/05/2026', valor: 'R$ 56.100', status: 'Aprovado' },
-  { id: '5', fornecedor: 'Lubrificantes Pro', categoria: 'Manutenção', data: '03/05/2026', valor: 'R$ 8.900', status: 'Pendente' },
-  { id: '6', fornecedor: 'Aço Forte Ltda', categoria: 'Matéria-prima', data: '02/05/2026', valor: 'R$ 127.300', status: 'Recebido' },
-];
-
-/* -------------------------------------------------------------------------- */
-/*  Table columns                                                             */
-/* -------------------------------------------------------------------------- */
-
 const pedidoCompraColumns = [
   { key: 'fornecedor' as const, label: 'Fornecedor' },
   { key: 'categoria' as const, label: 'Categoria' },
