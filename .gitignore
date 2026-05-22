@@ -63,3 +63,16 @@ sync-agent/.env.*
 # Literal folder names with $ (not env vars)
 frontend/\$*/
 frontend/$$APPDATA/
+
+# ==========================================
+# Documentos internos / sensíveis (nunca commitar)
+# ==========================================
+GUIA_SUPABASE.md
+PROMPT_FRONTEND_ERPVIEW.md
+PROMPT_FRONTEND_ERPVIEW.txt
+PRD_Dashboard_ERP_Revisado.md
+PLANO_EXECUCAO_DASHBOARD_ERP.md
+erp_dashboard_design_map.html
+"# PRD — Plataforma de Dashboard Int.txt"
+.qoder/
+__paths_to_remove.txt
