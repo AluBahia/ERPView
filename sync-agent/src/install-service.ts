@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const svc = new Service({
   name: 'ERPView Sync Agent',
   description: 'Agente de sincronização SQL Server -> Supabase para ERPView',
-  script: join(__dirname, 'index.js'),
+  script: join(__dirname, '..', 'dist', 'index.js'),
   env: [
     { name: 'NODE_ENV', value: 'production' },
   ],

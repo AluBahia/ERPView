@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const booleanString = z
+  .string()
+  .optional()
+  .transform((val) => val === 'true' || val === '1');
+
 const configSchema = z.object({
   sqlServer: z.object({
     host: z.string().min(1),
@@ -7,8 +12,8 @@ const configSchema = z.object({
     database: z.string().min(1),
     user: z.string().min(1),
     password: z.string().min(1),
-    encrypt: z.coerce.boolean().default(false),
-    trustServerCertificate: z.coerce.boolean().default(true),
+    encrypt: booleanString.default('false'),
+    trustServerCertificate: booleanString.default('true'),
   }),
   supabase: z.object({
     url: z.string().url(),

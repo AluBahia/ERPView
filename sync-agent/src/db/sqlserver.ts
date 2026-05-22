@@ -11,6 +11,10 @@ const poolConfig: sql.config = {
   options: {
     encrypt: config.sqlServer.encrypt,
     trustServerCertificate: config.sqlServer.trustServerCertificate,
+    cryptoCredentialsDetails: {
+      minVersion: 'TLSv1',
+      ciphers: 'DEFAULT:@SECLEVEL=0',
+    },
   },
   pool: {
     min: 1,
