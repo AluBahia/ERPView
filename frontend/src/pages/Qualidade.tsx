@@ -8,7 +8,10 @@ import { LineChart } from '../components/charts/LineChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useKPIs } from '../hooks/useKPIs';
 import { useExport } from '../hooks/useExport';
-import { qualidadeKPIs, mockNCRs } from '../lib/mock-data/kpis';
+import { useQualidade } from '../hooks/useQualidade';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { NCR } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -57,10 +60,18 @@ const kanbanColumns: { status: NCRStatus; label: string; color: string }[] = [
 /* -------------------------------------------------------------------------- */
 
 export default function Qualidade() {
-  const { data: kpis } = useKPIs('qualidade');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('qualidade');
+  const { data: ncrs, isLoading: dataLoading, error: dataError, refetch: refetchData } = useQualidade();
   const { exporting, exportReport } = useExport();
 
-  const displayKPIs = kpis ?? qualidadeKPIs;
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton kpiCount={6} chartCount={4} tableRows={3} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
+  const displayKPIs = kpis || [];
 
   return (
     <motion.div
@@ -141,7 +152,7 @@ export default function Qualidade() {
       <Card header="Kanban — Não Conformidades">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {kanbanColumns.map((col) => {
-            const items = mockNCRs.filter((ncr) => ncr.status === col.status);
+            const items = (ncrs || []).filter((ncr: any) => ncr.status === col.status);
             return (
               <div
                 key={col.status}

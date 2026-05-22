@@ -27,6 +27,7 @@ import {
 import type { AreaColor } from '../../types';
 import { NAV_GROUPS } from '../../lib/constants';
 import { useUIStore } from '../../store/uiStore';
+import { usePermissao } from '../../hooks/usePermissao';
 
 /* -------------------------------------------------------------------------- */
 /*  Icon lookup — constant icon name strings → Tabler components              */
@@ -110,6 +111,7 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { sidebarCollapsed, mobileMenuOpen, toggleSidebar, setMobileMenuOpen } = useUIStore();
+  const { temPermissao, role } = usePermissao();
   const drawerRef = useRef<HTMLDivElement>(null);
 
   const currentPath = location.pathname;
@@ -139,6 +141,8 @@ export function Sidebar() {
   function renderNav() {
     return NAV_GROUPS.map((group) => {
       const isGeral = group.area === 'geral';
+      const visibleItems = group.items.filter((item) => temPermissao(item.id));
+      if (visibleItems.length === 0) return null;
 
       return (
         <div key={group.area} className={isGeral ? '' : 'mt-4'}>
@@ -154,7 +158,7 @@ export function Sidebar() {
           )}
 
           {/* Items */}
-          {group.items.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = ICON_MAP[item.icon];
             const path = idToPath(item.id);
             const isActive = currentPath === path || currentPath.startsWith(path + '/');
@@ -206,6 +210,11 @@ export function Sidebar() {
           ERP
           <span className="text-blue">View</span>
         </span>
+        {!sidebarCollapsed && role && (
+          <span className="ml-auto text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-bg-tertiary text-text-muted">
+            {role.replace('_', ' ')}
+          </span>
+        )}
       </div>
 
       {/* Navigation */}

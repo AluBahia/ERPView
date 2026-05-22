@@ -9,11 +9,10 @@ import { PieChart } from '../components/charts/PieChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useExport } from '../hooks/useExport';
 import { useKPIs } from '../hooks/useKPIs';
-import {
-  clientesKPIs,
-  mockClientes,
-} from '../lib/mock-data/kpis';
-import type { Cliente } from '../types';
+import { useClientes } from '../hooks/useClientes';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 
 /* -------------------------------------------------------------------------- */
 /*  Inline chart data                                                         */
@@ -64,7 +63,7 @@ const clienteColumns = [
     key: 'classeABC' as const,
     label: 'Classe',
     render: (value: unknown) => {
-      const classe = value as Cliente['classeABC'];
+      const classe = value as string;
       const variantMap: Record<string, 'blue' | 'green' | 'amber'> = { A: 'green', B: 'blue', C: 'amber' };
       return <Badge variant={variantMap[classe] ?? 'amber'}>{classe}</Badge>;
     },
@@ -73,7 +72,7 @@ const clienteColumns = [
     key: 'statusCredito' as const,
     label: 'Crédito',
     render: (value: unknown) => {
-      const credito = value as Cliente['statusCredito'];
+      const credito = value as string;
       const variantMap: Record<string, 'green' | 'amber' | 'red'> = { OK: 'green', Atenção: 'amber', Bloqueado: 'red' };
       return <Badge variant={variantMap[credito] ?? 'amber'}>{credito}</Badge>;
     },
@@ -85,8 +84,17 @@ const clienteColumns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Clientes() {
-  const { data: kpis } = useKPIs('clientes');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('clientes');
+  const { data: clientes, isLoading: dataLoading, error: dataError, refetch: refetchData } = useClientes();
   const { exporting, exportReport } = useExport();
+
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!clientes?.length) return <EmptyState title="Nenhum cliente encontrado" subtitle="Não há clientes cadastrados no sistema." />;
 
   return (
     <motion.div
@@ -120,7 +128,7 @@ export default function Clientes() {
 
       {/* ── KPI grid ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {(kpis ?? clientesKPIs).map((kpi, i) => (
+        {(kpis || []).map((kpi, i) => (
           <KPICard
             key={i}
             label={kpi.label}
@@ -173,7 +181,7 @@ export default function Clientes() {
 
       {/* ── Data table ───────────────────────────────────────────────────── */}
       <Card header="Cadastro de Clientes">
-        <DataTable columns={clienteColumns} data={mockClientes as unknown as Record<string, unknown>[]} />
+        <DataTable columns={clienteColumns} data={clientes as unknown as Record<string, unknown>[]} />
       </Card>
     </motion.div>
   );

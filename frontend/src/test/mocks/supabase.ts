@@ -19,6 +19,11 @@ const createQueryBuilder = () => {
 
 export const mockSupabaseClient = {
   from: vi.fn().mockImplementation(() => createQueryBuilder()),
+  channel: vi.fn().mockReturnValue({
+    on: vi.fn().mockReturnThis(),
+    subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
+  }),
+  removeChannel: vi.fn(),
   auth: {
     getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
     getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),

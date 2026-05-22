@@ -9,6 +9,9 @@ import { GaugeChart } from '../components/charts/GaugeChart';
 import { PieChart } from '../components/charts/PieChart';
 import { FilterBar } from '../components/filters/FilterBar';
 import { useExport } from '../hooks/useExport';
+import { useKPIs } from '../hooks/useKPIs';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
 import { custosKPIs } from '../lib/mock-data/kpis';
 
 /* -------------------------------------------------------------------------- */
@@ -110,7 +113,13 @@ function Simulator() {
 /* -------------------------------------------------------------------------- */
 
 export default function Custos() {
+  const { data: kpis, isLoading, error, refetch } = useKPIs('custos');
   const { exporting, exportReport } = useExport();
+
+  if (isLoading) return <LoadingSkeleton kpiCount={4} chartCount={4} tableRows={0} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
+  const displayKPIs = kpis || custosKPIs;
 
   return (
     <motion.div
@@ -144,7 +153,7 @@ export default function Custos() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {custosKPIs.map((kpi, i) => (
+        {displayKPIs.map((kpi, i) => (
           <KPICard key={i} {...kpi} />
         ))}
       </div>

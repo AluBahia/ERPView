@@ -9,11 +9,12 @@ import { LineChart } from '../components/charts/LineChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { FilterBar } from '../components/filters/FilterBar';
 import { useExport } from '../hooks/useExport';
+import { useKPIs } from '../hooks/useKPIs';
+import { usePagar } from '../hooks/usePagar';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
 import { statusToBadgeVariant } from '../lib/formatters';
-import {
-  pagarKPIs,
-  mockTitulosPagar,
-} from '../lib/mock-data/kpis';
+import { pagarKPIs } from '../lib/mock-data/kpis';
 import type { TituloPagar } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -58,19 +59,30 @@ const KANBAN_COLS: { key: TituloPagar['status']; label: string; color: string }[
 /* -------------------------------------------------------------------------- */
 
 export default function Pagar() {
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('pagar');
+  const { data: titulos, isLoading: dataLoading, error: dataError, refetch: refetchData } = usePagar();
   const { exporting, exportReport } = useExport();
 
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton kpiCount={6} chartCount={4} tableRows={3} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
+  const displayKPIs = kpis || pagarKPIs;
+
   const grouped = useMemo(() => {
-    const map: Record<string, TituloPagar[]> = {
+    const map: Record<string, any[]> = {
       Pendente: [],
       Aprovado: [],
       Pago: [],
     };
-    mockTitulosPagar.forEach((t) => {
+    (titulos || []).forEach((t: any) => {
       if (map[t.status]) map[t.status].push(t);
     });
     return map;
-  }, []);
+  }, [titulos]);
 
   return (
     <motion.div
@@ -104,7 +116,7 @@ export default function Pagar() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        {pagarKPIs.map((kpi, i) => (
+        {displayKPIs.map((kpi, i) => (
           <KPICard key={i} {...kpi} />
         ))}
       </div>

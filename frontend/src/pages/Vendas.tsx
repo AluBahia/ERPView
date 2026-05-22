@@ -8,12 +8,13 @@ import { LineChart } from '../components/charts/LineChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useExport } from '../hooks/useExport';
 import { useKPIs } from '../hooks/useKPIs';
+import { useVendas } from '../hooks/useVendas';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import {
-  vendasKPIs,
   topVendedores,
-  mockPedidosVenda,
 } from '../lib/mock-data/kpis';
-import type { PedidoVenda } from '../types';
 
 /* -------------------------------------------------------------------------- */
 /*  Inline chart data                                                         */
@@ -41,15 +42,15 @@ const funnelSteps = [
 /* -------------------------------------------------------------------------- */
 
 const pedidoColumns = [
+  { key: 'numero' as const, label: 'Pedido' },
   { key: 'cliente' as const, label: 'Cliente' },
-  { key: 'vendedor' as const, label: 'Vendedor' },
-  { key: 'data' as const, label: 'Data' },
-  { key: 'valor' as const, label: 'Valor' },
+  { key: 'data_pedido' as const, label: 'Data' },
+  { key: 'valor_total' as const, label: 'Valor' },
   {
     key: 'status' as const,
     label: 'Status',
     render: (value: unknown) => {
-      const status = value as PedidoVenda['status'];
+      const status = value as string;
       const variantMap: Record<string, 'blue' | 'green' | 'amber' | 'red' | 'gray'> = {
         'Aberto': 'blue',
         'Em produção': 'amber',
@@ -67,8 +68,17 @@ const pedidoColumns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Vendas() {
-  const { data: kpis } = useKPIs('vendas');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('vendas');
+  const { data: pedidos, isLoading: dataLoading, error: dataError, refetch: refetchData } = useVendas();
   const { exporting, exportReport } = useExport();
+
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!pedidos?.length) return <EmptyState title="Nenhum pedido encontrado" subtitle="Não há pedidos de venda no período selecionado." />;
 
   return (
     <motion.div
@@ -102,7 +112,7 @@ export default function Vendas() {
 
       {/* ── KPI grid ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {(kpis ?? vendasKPIs).map((kpi, i) => (
+        {(kpis || []).map((kpi, i) => (
           <KPICard
             key={i}
             label={kpi.label}
@@ -169,7 +179,7 @@ export default function Vendas() {
 
       {/* ── Data table ───────────────────────────────────────────────────── */}
       <Card header="Pedidos de Venda">
-        <DataTable columns={pedidoColumns} data={mockPedidosVenda as unknown as Record<string, unknown>[]} />
+        <DataTable columns={pedidoColumns} data={pedidos as unknown as Record<string, unknown>[]} />
       </Card>
     </motion.div>
   );

@@ -1,0 +1,29 @@
+{
+  "name": "cr-service",
+  "version": "1.0.0",
+  "description": "Crystal Reports Bridge - Micro-serviço de geração de relatórios",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@fastify/rate-limit": "^10.0.0",
+    "@supabase/supabase-js": "^2.106.1",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.0.0",
+    "winston": "^3.17.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.9"
+  }
+}

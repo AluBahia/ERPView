@@ -8,6 +8,9 @@ import { GaugeChart } from '../components/charts/GaugeChart';
 import { PieChart } from '../components/charts/PieChart';
 import { FilterBar } from '../components/filters/FilterBar';
 import { useExport } from '../hooks/useExport';
+import { useKPIs } from '../hooks/useKPIs';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
 import { rhKPIs } from '../lib/mock-data/kpis';
 
 /* -------------------------------------------------------------------------- */
@@ -134,7 +137,13 @@ function VacationCalendar() {
 /* -------------------------------------------------------------------------- */
 
 export default function RH() {
+  const { data: kpis, isLoading, error, refetch } = useKPIs('rh');
   const { exporting, exportReport } = useExport();
+
+  if (isLoading) return <LoadingSkeleton kpiCount={6} chartCount={4} tableRows={0} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
+  const displayKPIs = kpis || rhKPIs;
 
   return (
     <motion.div
@@ -168,7 +177,7 @@ export default function RH() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        {rhKPIs.map((kpi, i) => (
+        {displayKPIs.map((kpi, i) => (
           <KPICard key={i} {...kpi} />
         ))}
       </div>

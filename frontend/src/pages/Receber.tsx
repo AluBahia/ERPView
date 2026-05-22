@@ -10,11 +10,13 @@ import { GaugeChart } from '../components/charts/GaugeChart';
 import { PieChart } from '../components/charts/PieChart';
 import { FilterBar } from '../components/filters/FilterBar';
 import { useExport } from '../hooks/useExport';
+import { useKPIs } from '../hooks/useKPIs';
+import { useReceber } from '../hooks/useReceber';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import { statusToBadgeVariant } from '../lib/formatters';
-import {
-  receberKPIs,
-  mockTitulosReceber,
-} from '../lib/mock-data/kpis';
+import { receberKPIs } from '../lib/mock-data/kpis';
 import type { TituloReceber } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -73,7 +75,18 @@ const columns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Receber() {
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('receber');
+  const { data: titulos, isLoading: dataLoading, error: dataError, refetch: refetchData } = useReceber();
   const { exporting, exportReport } = useExport();
+
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton kpiCount={6} chartCount={4} tableRows={4} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
+  const displayKPIs = kpis || receberKPIs;
 
   return (
     <motion.div
@@ -107,7 +120,7 @@ export default function Receber() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        {receberKPIs.map((kpi, i) => (
+        {displayKPIs.map((kpi, i) => (
           <KPICard key={i} {...kpi} />
         ))}
       </div>
@@ -145,7 +158,7 @@ export default function Receber() {
 
       {/* DataTable */}
       <Card header="Títulos a Receber">
-        <DataTable columns={columns} data={mockTitulosReceber} />
+        <DataTable columns={columns} data={titulos as unknown as Record<string, unknown>[]} />
       </Card>
     </motion.div>
   );

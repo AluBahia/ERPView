@@ -8,7 +8,10 @@ import { LineChart } from '../components/charts/LineChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useExport } from '../hooks/useExport';
 import { useKPIs } from '../hooks/useKPIs';
-import { comprasKPIs } from '../lib/mock-data/kpis';
+import { useCompras } from '../hooks/useCompras';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 
 /* -------------------------------------------------------------------------- */
 /*  Inline chart data                                                         */
@@ -84,8 +87,17 @@ const pedidoCompraColumns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Compras() {
-  const { data: kpis } = useKPIs('compras');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('compras');
+  const { data: compras, isLoading: dataLoading, error: dataError, refetch: refetchData } = useCompras();
   const { exporting, exportReport } = useExport();
+
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!compras?.length) return <EmptyState title="Nenhum pedido de compra" subtitle="Não há pedidos de compra no período selecionado." />;
 
   return (
     <motion.div
@@ -119,7 +131,7 @@ export default function Compras() {
 
       {/* ── KPI grid ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {(kpis ?? comprasKPIs).map((kpi, i) => (
+        {(kpis || []).map((kpi, i) => (
           <KPICard
             key={i}
             label={kpi.label}
@@ -189,7 +201,7 @@ export default function Compras() {
 
       {/* ── Data table ───────────────────────────────────────────────────── */}
       <Card header="Pedidos de Compra">
-        <DataTable columns={pedidoCompraColumns} data={mockPedidosCompra} />
+        <DataTable columns={pedidoCompraColumns} data={compras as unknown as Record<string, unknown>[]} />
       </Card>
     </motion.div>
   );

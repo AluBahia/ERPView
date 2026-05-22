@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { QUERY_STALE_TIME } from '../lib/constants';
+import { QUERY_STALE_TIME_FINANCEIRO } from '../lib/constants';
 import type { Database } from '../types';
 
 export type DRERow = Database['public']['Tables']['dre']['Row'];
@@ -26,6 +26,6 @@ export function useDRE(filtros: FiltrosDRE = {}) {
       if (error) throw new Error(`Erro ao carregar DRE: ${error.message}`);
       return data as DRERow[];
     },
-    staleTime: QUERY_STALE_TIME,
+    staleTime: QUERY_STALE_TIME_FINANCEIRO,
   });
 }

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { QUERY_STALE_TIME } from '../lib/constants';
+import { QUERY_STALE_TIME_FINANCEIRO } from '../lib/constants';
 import type { Database } from '../types';
 
 export type TituloReceberRow = Database['public']['Tables']['titulos_receber']['Row'];
@@ -30,6 +30,6 @@ export function useReceber(filtros: FiltrosReceber = {}) {
       if (error) throw new Error(`Erro ao carregar titulos a receber: ${error.message}`);
       return data as TituloReceberRow[];
     },
-    staleTime: QUERY_STALE_TIME,
+    staleTime: QUERY_STALE_TIME_FINANCEIRO,
   });
 }

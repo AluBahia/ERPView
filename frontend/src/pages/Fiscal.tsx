@@ -11,8 +11,12 @@ import { GaugeChart } from '../components/charts/GaugeChart';
 import { PieChart } from '../components/charts/PieChart';
 import { FilterBar } from '../components/filters/FilterBar';
 import { useExport } from '../hooks/useExport';
+import { useKPIs } from '../hooks/useKPIs';
+import { useFiscal } from '../hooks/useFiscal';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
 import { statusToBadgeVariant } from '../lib/formatters';
-import { fiscalKPIs, mockNFs } from '../lib/mock-data/kpis';
+import { fiscalKPIs } from '../lib/mock-data/kpis';
 import type { NFiscal } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -159,7 +163,18 @@ const columns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Fiscal() {
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('fiscal');
+  const { data: notas, isLoading: dataLoading, error: dataError, refetch: refetchData } = useFiscal();
   const { exporting, exportReport } = useExport();
+
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton kpiCount={5} chartCount={4} tableRows={4} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
+  const displayKPIs = kpis || fiscalKPIs;
 
   return (
     <motion.div
@@ -193,7 +208,7 @@ export default function Fiscal() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
-        {fiscalKPIs.map((kpi, i) => (
+        {displayKPIs.map((kpi, i) => (
           <KPICard key={i} {...kpi} />
         ))}
       </div>
@@ -235,7 +250,7 @@ export default function Fiscal() {
 
       {/* DataTable */}
       <Card header="Notas Fiscais">
-        <DataTable columns={columns} data={mockNFs} />
+        <DataTable columns={columns} data={notas as unknown as Record<string, unknown>[]} />
       </Card>
     </motion.div>
   );

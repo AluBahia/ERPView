@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { QUERY_STALE_TIME } from '../lib/constants';
+import { QUERY_STALE_TIME_FINANCEIRO } from '../lib/constants';
 import type { Database } from '../types';
 
 export type FluxoCaixaRow = Database['public']['Tables']['fluxo_caixa']['Row'];
@@ -32,6 +32,6 @@ export function useFluxoCaixa(filtros: FiltrosFluxoCaixa = {}) {
       if (error) throw new Error(`Erro ao carregar fluxo de caixa: ${error.message}`);
       return data as FluxoCaixaRow[];
     },
-    staleTime: QUERY_STALE_TIME,
+    staleTime: QUERY_STALE_TIME_FINANCEIRO,
   });
 }

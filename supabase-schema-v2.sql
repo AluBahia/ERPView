@@ -98,6 +98,21 @@ CREATE TABLE IF NOT EXISTS rh_colaboradores (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Tabela de Pedidos de Compra (sincronizada pelo Sync Agent)
+CREATE TABLE IF NOT EXISTS pedidos_compra (
+  id BIGSERIAL PRIMARY KEY,
+  numero TEXT NOT NULL UNIQUE,
+  fornecedor_id BIGINT REFERENCES fornecedores(id) ON DELETE SET NULL,
+  status TEXT CHECK (status IN ('Rascunho', 'Enviado', 'Confirmado', 'Recebido', 'Cancelado')),
+  data_emissao DATE,
+  data_previsao DATE,
+  data_recebimento DATE,
+  valor_total DECIMAL(19,4) DEFAULT 0,
+  observacao TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ==========================================
 -- Row Level Security (RLS)
 -- ==========================================
@@ -108,6 +123,7 @@ ALTER TABLE fluxo_caixa ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dre ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rh_colaboradores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pedidos_compra ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de leitura: qualquer usuário autenticado pode ler
 CREATE POLICY "Usuários autenticados podem ler perfis" ON perfis_usuario FOR SELECT TO authenticated USING (true);

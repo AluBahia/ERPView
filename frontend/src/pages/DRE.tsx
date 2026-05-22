@@ -7,6 +7,9 @@ import { BarChart } from '../components/charts/BarChart';
 import { PieChart } from '../components/charts/PieChart';
 import { FilterBar } from '../components/filters/FilterBar';
 import { useExport } from '../hooks/useExport';
+import { useKPIs } from '../hooks/useKPIs';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
 import { dreKPIs } from '../lib/mock-data/kpis';
 
 /* -------------------------------------------------------------------------- */
@@ -136,7 +139,13 @@ function WaterfallChart({ data }: { data: WaterfallItem[] }) {
 /* -------------------------------------------------------------------------- */
 
 export default function DRE() {
+  const { data: kpis, isLoading, error, refetch } = useKPIs('dre');
   const { exporting, exportReport } = useExport();
+
+  if (isLoading) return <LoadingSkeleton kpiCount={5} chartCount={4} tableRows={0} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
+  const displayKPIs = kpis || dreKPIs;
 
   return (
     <motion.div
@@ -170,7 +179,7 @@ export default function DRE() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
-        {dreKPIs.map((kpi, i) => (
+        {displayKPIs.map((kpi, i) => (
           <KPICard key={i} {...kpi} />
         ))}
       </div>

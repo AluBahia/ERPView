@@ -10,7 +10,10 @@ import { PieChart } from '../components/charts/PieChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useKPIs } from '../hooks/useKPIs';
 import { useExport } from '../hooks/useExport';
-import { estoqueKPIs, mockEstoque } from '../lib/mock-data/kpis';
+import { useEstoque } from '../hooks/useEstoque';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { ItemEstoque } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -68,22 +71,26 @@ const columns = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/*  Critical items                                                            */
-/* -------------------------------------------------------------------------- */
-
-const criticalItems = mockEstoque.filter(
-  (item) => item.status === 'Zerado' || item.status === 'Crítico',
-);
-
-/* -------------------------------------------------------------------------- */
 /*  Page                                                                      */
 /* -------------------------------------------------------------------------- */
 
 export default function Estoque() {
-  const { data: kpis } = useKPIs('estoque');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('estoque');
+  const { data: estoque, isLoading: dataLoading, error: dataError, refetch: refetchData } = useEstoque();
   const { exporting, exportReport } = useExport();
 
-  const displayKPIs = kpis ?? estoqueKPIs;
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton kpiCount={5} chartCount={4} tableRows={5} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!estoque?.length) return <EmptyState title="Nenhum item em estoque" subtitle="Não há itens cadastrados no estoque." />;
+
+  const displayKPIs = kpis || [];
+  const criticalItems = estoque.filter(
+    (item: any) => item.status === 'Zerado' || item.status === 'Crítico',
+  );
 
   return (
     <motion.div
@@ -160,7 +167,7 @@ export default function Estoque() {
         {/* Main table */}
         <div className="lg:col-span-2">
           <Card header="Itens em Estoque">
-            <DataTable columns={columns} data={mockEstoque} />
+            <DataTable columns={columns} data={estoque as unknown as Record<string, unknown>[]} />
           </Card>
         </div>
 

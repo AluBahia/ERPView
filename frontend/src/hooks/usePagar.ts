@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { QUERY_STALE_TIME } from '../lib/constants';
+import { QUERY_STALE_TIME_FINANCEIRO } from '../lib/constants';
 import type { Database } from '../types';
 
 export type TituloPagarRow = Database['public']['Tables']['titulos_pagar']['Row'];
@@ -30,6 +30,6 @@ export function usePagar(filtros: FiltrosPagar = {}) {
       if (error) throw new Error(`Erro ao carregar titulos a pagar: ${error.message}`);
       return data as TituloPagarRow[];
     },
-    staleTime: QUERY_STALE_TIME,
+    staleTime: QUERY_STALE_TIME_FINANCEIRO,
   });
 }

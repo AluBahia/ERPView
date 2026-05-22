@@ -8,6 +8,9 @@ import { GaugeChart } from '../components/charts/GaugeChart';
 import { PieChart } from '../components/charts/PieChart';
 import { FilterBar } from '../components/filters/FilterBar';
 import { useExport } from '../hooks/useExport';
+import { useKPIs } from '../hooks/useKPIs';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
 import { fluxoCaixaKPIs } from '../lib/mock-data/kpis';
 
 /* -------------------------------------------------------------------------- */
@@ -44,8 +47,13 @@ const composicaoEntradas = [
 /* -------------------------------------------------------------------------- */
 
 export default function FluxoCaixa() {
+  const { data: kpis, isLoading, error, refetch } = useKPIs('fluxo-caixa');
   const { exporting, exportReport } = useExport();
 
+  if (isLoading) return <LoadingSkeleton kpiCount={5} chartCount={4} tableRows={0} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+
+  const displayKPIs = kpis || fluxoCaixaKPIs;
   const hasNegative = projecaoFluxo.some((p) => p.saldo < 0);
 
   return (
@@ -80,7 +88,7 @@ export default function FluxoCaixa() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
-        {fluxoCaixaKPIs.map((kpi, i) => (
+        {displayKPIs.map((kpi, i) => (
           <KPICard key={i} {...kpi} />
         ))}
       </div>

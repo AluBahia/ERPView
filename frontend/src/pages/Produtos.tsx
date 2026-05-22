@@ -12,7 +12,10 @@ import { PieChart } from '../components/charts/PieChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useKPIs } from '../hooks/useKPIs';
 import { useExport } from '../hooks/useExport';
-import { produtosKPIs, mockProdutos } from '../lib/mock-data/kpis';
+import { useProdutos } from '../hooks/useProdutos';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { Produto } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -113,12 +116,21 @@ interface ProdutoRow extends Produto {
 }
 
 export default function Produtos() {
-  const { data: kpis } = useKPIs('produtos');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('produtos');
+  const { data: produtos, isLoading: dataLoading, error: dataError, refetch: refetchData } = useProdutos();
   const { exporting, exportReport } = useExport();
   const [bomOpen, setBomOpen] = useState(false);
   const [selectedBom, setSelectedBom] = useState<BOMNode | null>(null);
 
-  const displayKPIs = kpis ?? produtosKPIs;
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!produtos?.length) return <EmptyState title="Nenhum produto encontrado" subtitle="Não há produtos cadastrados no sistema." />;
+
+  const displayKPIs = kpis || [];
 
   const handleBomClick = (codigo: string) => {
     const tree = bomTree[codigo];
@@ -229,7 +241,7 @@ export default function Produtos() {
 
       {/* Data Section */}
       <Card header="Catálogo de Produtos">
-        <DataTable columns={columns} data={mockProdutos as unknown as ProdutoRow[]} />
+        <DataTable columns={columns} data={produtos as unknown as ProdutoRow[]} />
       </Card>
 
       {/* BOM Modal */}

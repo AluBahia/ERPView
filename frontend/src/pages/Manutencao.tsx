@@ -11,7 +11,10 @@ import { PieChart } from '../components/charts/PieChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useKPIs } from '../hooks/useKPIs';
 import { useExport } from '../hooks/useExport';
-import { manutencaoKPIs, mockOS } from '../lib/mock-data/kpis';
+import { useManutencao } from '../hooks/useManutencao';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { OrdemServico } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -114,10 +117,19 @@ const columns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Manutencao() {
-  const { data: kpis } = useKPIs('manutencao');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('manutencao');
+  const { data: ordens, isLoading: dataLoading, error: dataError, refetch: refetchData } = useManutencao();
   const { exporting, exportReport } = useExport();
 
-  const displayKPIs = kpis ?? manutencaoKPIs;
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton kpiCount={6} chartCount={4} tableRows={3} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!ordens?.length) return <EmptyState title="Nenhuma ordem de serviço" subtitle="Não há ordens de serviço no período selecionado." />;
+
+  const displayKPIs = kpis || [];
 
   const calendarCells = useMemo(() => {
     const now = new Date();
@@ -264,7 +276,7 @@ export default function Manutencao() {
         {/* Table */}
         <div className="lg:col-span-2">
           <Card header="Ordens de Serviço">
-            <DataTable columns={columns} data={mockOS} />
+            <DataTable columns={columns} data={ordens as unknown as Record<string, unknown>[]} />
           </Card>
         </div>
       </div>

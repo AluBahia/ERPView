@@ -9,8 +9,11 @@ import { PieChart } from '../components/charts/PieChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useKPIs } from '../hooks/useKPIs';
 import { useExport } from '../hooks/useExport';
+import { useProducao } from '../hooks/useProducao';
 import { useUIStore } from '../store/uiStore';
-import { producaoKPIs, mockOrdensProducao } from '../lib/mock-data/kpis';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { OrdemProducao } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -79,11 +82,20 @@ const columns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Producao() {
-  const { data: kpis } = useKPIs('producao');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('producao');
+  const { data: ordens, isLoading: dataLoading, error: dataError, refetch: refetchData } = useProducao();
   const { exporting, exportReport } = useExport();
   const { factoryFloorActive, toggleFactoryFloor } = useUIStore();
 
-  const displayKPIs = kpis ?? producaoKPIs;
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton kpiCount={5} chartCount={4} tableRows={4} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!ordens?.length) return <EmptyState title="Nenhuma ordem de produção" subtitle="Não há ordens de produção no período selecionado." />;
+
+  const displayKPIs = kpis || [];
 
   return (
     <motion.div
@@ -198,7 +210,7 @@ export default function Producao() {
 
       {/* Data Section */}
       <Card header="Ordens de Produção">
-        <DataTable columns={columns} data={mockOrdensProducao} />
+        <DataTable columns={columns} data={ordens as unknown as Record<string, unknown>[]} />
       </Card>
     </motion.div>
   );

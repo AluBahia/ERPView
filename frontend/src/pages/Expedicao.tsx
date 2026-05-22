@@ -10,7 +10,10 @@ import { PieChart } from '../components/charts/PieChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useKPIs } from '../hooks/useKPIs';
 import { useExport } from '../hooks/useExport';
-import { expedicaoKPIs, mockExpedicao } from '../lib/mock-data/kpis';
+import { useExpedicao } from '../hooks/useExpedicao';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { PedidoExpedicao } from '../types';
 
 /* -------------------------------------------------------------------------- */
@@ -76,10 +79,19 @@ const columns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Expedicao() {
-  const { data: kpis } = useKPIs('expedicao');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('expedicao');
+  const { data: pedidos, isLoading: dataLoading, error: dataError, refetch: refetchData } = useExpedicao();
   const { exporting, exportReport } = useExport();
 
-  const displayKPIs = kpis ?? expedicaoKPIs;
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton kpiCount={5} chartCount={4} tableRows={3} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!pedidos?.length) return <EmptyState title="Nenhum pedido de expedição" subtitle="Não há pedidos de expedição no período selecionado." />;
+
+  const displayKPIs = kpis || [];
 
   return (
     <motion.div
@@ -153,7 +165,7 @@ export default function Expedicao() {
 
       {/* Data Section */}
       <Card header="Pedidos de Expedição">
-        <DataTable columns={columns} data={mockExpedicao} />
+        <DataTable columns={columns} data={pedidos as unknown as Record<string, unknown>[]} />
       </Card>
     </motion.div>
   );

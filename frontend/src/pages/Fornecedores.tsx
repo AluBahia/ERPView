@@ -9,11 +9,10 @@ import { PieChart } from '../components/charts/PieChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useExport } from '../hooks/useExport';
 import { useKPIs } from '../hooks/useKPIs';
-import {
-  fornecedoresKPIs,
-  mockFornecedores,
-} from '../lib/mock-data/kpis';
-import type { Fornecedor } from '../types';
+import { useFornecedores } from '../hooks/useFornecedores';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 
 /* -------------------------------------------------------------------------- */
 /*  Inline chart data                                                         */
@@ -74,7 +73,7 @@ const fornecedorColumns = [
     key: 'homologacao' as const,
     label: 'Homologação',
     render: (value: unknown) => {
-      const homologacao = value as Fornecedor['homologacao'];
+      const homologacao = value as string;
       const variantMap: Record<string, 'green' | 'amber' | 'red'> = {
         Homologado: 'green',
         Condicional: 'amber',
@@ -87,7 +86,7 @@ const fornecedorColumns = [
     key: 'documentacao' as const,
     label: 'Documentação',
     render: (value: unknown) => {
-      const doc = value as Fornecedor['documentacao'];
+      const doc = value as string;
       const variantMap: Record<string, 'green' | 'amber' | 'red'> = {
         OK: 'green',
         Vencendo: 'amber',
@@ -103,8 +102,17 @@ const fornecedorColumns = [
 /* -------------------------------------------------------------------------- */
 
 export default function Fornecedores() {
-  const { data: kpis } = useKPIs('fornecedores');
+  const { data: kpis, isLoading: kpiLoading, error: kpiError, refetch: refetchKPIs } = useKPIs('fornecedores');
+  const { data: fornecedores, isLoading: dataLoading, error: dataError, refetch: refetchData } = useFornecedores();
   const { exporting, exportReport } = useExport();
+
+  const isLoading = kpiLoading || dataLoading;
+  const error = kpiError || dataError;
+  const refetch = () => { refetchKPIs(); refetchData(); };
+
+  if (isLoading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
+  if (!fornecedores?.length) return <EmptyState title="Nenhum fornecedor encontrado" subtitle="Não há fornecedores cadastrados no sistema." />;
 
   return (
     <motion.div
@@ -138,7 +146,7 @@ export default function Fornecedores() {
 
       {/* ── KPI grid ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {(kpis ?? fornecedoresKPIs).map((kpi, i) => (
+        {(kpis || []).map((kpi, i) => (
           <KPICard
             key={i}
             label={kpi.label}
@@ -191,7 +199,7 @@ export default function Fornecedores() {
 
       {/* ── Data table ───────────────────────────────────────────────────── */}
       <Card header="Cadastro de Fornecedores">
-        <DataTable columns={fornecedorColumns} data={mockFornecedores as unknown as Record<string, unknown>[]} />
+        <DataTable columns={fornecedorColumns} data={fornecedores as unknown as Record<string, unknown>[]} />
       </Card>
     </motion.div>
   );

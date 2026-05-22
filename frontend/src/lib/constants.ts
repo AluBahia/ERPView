@@ -31,3 +31,4 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 export const QUERY_STALE_TIME = 1000 * 60 * 5; // 5 minutes
+export const QUERY_STALE_TIME_FINANCEIRO = 1000 * 60 * 1; // 1 minute

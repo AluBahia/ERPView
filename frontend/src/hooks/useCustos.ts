@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { QUERY_STALE_TIME } from '../lib/constants';
+import { QUERY_STALE_TIME_FINANCEIRO } from '../lib/constants';
 import type { Database } from '../types';
 
 export type CustoRow = Database['public']['Tables']['custos']['Row'];
@@ -27,6 +27,6 @@ export function useCustos(filtros: FiltrosCustos = {}) {
       if (error) throw new Error(`Erro ao carregar custos: ${error.message}`);
       return data as CustoRow[];
     },
-    staleTime: QUERY_STALE_TIME,
+    staleTime: QUERY_STALE_TIME_FINANCEIRO,
   });
 }

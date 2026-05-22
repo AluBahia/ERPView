@@ -7,8 +7,10 @@ import { LineChart } from '../components/charts/LineChart';
 import { PieChart } from '../components/charts/PieChart';
 import { GaugeChart } from '../components/charts/GaugeChart';
 import { useKPIs } from '../hooks/useKPIs';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 import {
-  dashboardKPIs,
   faturamentoMensal,
   topVendedores,
   canaisVenda,
@@ -29,7 +31,10 @@ const criticalAlerts = [
 /* -------------------------------------------------------------------------- */
 
 export default function Dashboard() {
-  const { data: kpis } = useKPIs('dashboard');
+  const { data: kpis, isLoading, error, refetch } = useKPIs('dashboard');
+
+  if (isLoading) return <LoadingSkeleton kpiCount={8} chartCount={4} tableRows={3} />;
+  if (error) return <ErrorState message={error.message} onRetry={refetch} />;
 
   return (
     <motion.div
@@ -66,7 +71,7 @@ export default function Dashboard() {
 
       {/* ── KPI grid ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {(kpis ?? dashboardKPIs).map((kpi, i) => (
+        {(kpis || []).map((kpi, i) => (
           <KPICard
             key={i}
             label={kpi.label}
