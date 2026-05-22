@@ -514,6 +514,56 @@ export interface Database {
         }
         Relationships: []
       }
+      pedidos_compra: {
+        Row: {
+          created_at: string | null
+          data_emissao: string | null
+          data_previsao: string | null
+          data_recebimento: string | null
+          fornecedor_id: number | null
+          id: number
+          numero: string
+          observacao: string | null
+          status: string | null
+          updated_at: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_emissao?: string | null
+          data_previsao?: string | null
+          data_recebimento?: string | null
+          fornecedor_id?: number | null
+          id?: number
+          numero: string
+          observacao?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_emissao?: string | null
+          data_previsao?: string | null
+          data_recebimento?: string | null
+          fornecedor_id?: number | null
+          id?: number
+          numero?: string
+          observacao?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_compra_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       pedidos_expedicao: {
         Row: {
           cidade: string | null
