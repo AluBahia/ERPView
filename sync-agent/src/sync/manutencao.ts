@@ -1,12 +1,11 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
 
 interface OrdemServicoSQL {
   id: string;
-  numero: string;
   tipo: string;
   status: string;
   descricao?: string;
@@ -21,7 +20,6 @@ export async function syncManutencao(): Promise<{ inseridos: number; atualizados
   const fonte = await retry(() => query<OrdemServicoSQL>(`
     SELECT
       CAST(Codigo AS VARCHAR(36)) AS id,
-      CAST(Codigo AS VARCHAR) AS numero,
       CAST(TipoOS AS VARCHAR) AS tipo,
       Status AS status,
       Descricao1 AS descricao,
@@ -32,26 +30,26 @@ export async function syncManutencao(): Promise<{ inseridos: number; atualizados
     WHERE Status NOT IN ('Cancelado')
   `), { label: 'query-manutencao' });
 
-  const { data: destinoData } = await supabase.from('ordens_servico').select('*');
+  const destinoData = await fetchAll('ordens_servico', 'id,equipamento,tipo,prioridade,abertura,prev_conclusao,status,updated_at');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    numero: d.numero ?? '',
+    equipamento: d.equipamento ?? '',
     tipo: d.tipo ?? '',
+    prioridade: d.prioridade ?? null,
     status: d.status ?? '',
-    descricao: d.descricao ?? null,
-    data_abertura: d.data_abertura ?? null,
-    data_conclusao: d.data_conclusao ?? null,
+    abertura: d.abertura ?? null,
+    prev_conclusao: d.prev_conclusao ?? null,
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    numero: f.numero ?? '',
+    equipamento: f.descricao ?? '',
     tipo: f.tipo ?? '',
+    prioridade: 'Média',
     status: f.status ?? '',
-    descricao: f.descricao ?? null,
-    data_abertura: f.data_abertura ? f.data_abertura.toISOString() : null,
-    data_conclusao: f.data_conclusao ? f.data_conclusao.toISOString() : null,
+    abertura: f.data_abertura ? f.data_abertura.toISOString().split('T')[0] : null,
+    prev_conclusao: f.data_conclusao ? f.data_conclusao.toISOString().split('T')[0] : null,
     updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 

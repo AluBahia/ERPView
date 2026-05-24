@@ -7,7 +7,7 @@ vi.mock('mssql', () => ({
       request: vi.fn().mockReturnValue({
         query: vi.fn().mockResolvedValue({
           recordset: [
-            { produto_id: '1', quantidade: 100, qtd_minima: 10, qtd_maxima: 500, deposito: 'CD1', data_atualizacao: new Date('2024-01-01') },
+            { codigo: 'P001', descricao: 'Produto A', quantidade: 100, data_atualizacao: new Date('2024-01-01') },
           ],
         }),
       }),
@@ -17,8 +17,10 @@ vi.mock('mssql', () => ({
 }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
+const mockFetchAll = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 vi.mock('../../src/db/supabase.js', () => ({
   supabase: { from: mockFrom },
+  fetchAll: mockFetchAll,
 }));
 
 import { syncEstoque } from '../../src/sync/estoque.js';
@@ -28,21 +30,28 @@ describe('syncEstoque', () => {
 
   test('insere itens de estoque novos no Supabase', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
+    mockFetchAll.mockResolvedValueOnce([]);
     const result = await syncEstoque();
     expect(result.inseridos).toBe(1);
   });
 
   test('atualiza quantidade quando alterada no ERP', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({
-        data: [{ produto_id: '1', quantidade: 50, qtd_minima: 10, qtd_maxima: 500, deposito: 'CD1', updated_at: '2023-01-01' }],
-        error: null,
-      }),
       update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) }),
     });
+    mockFetchAll.mockResolvedValueOnce([{
+      id: '1',
+      codigo: 'P001',
+      descricao: 'Produto A',
+      deposito: 'Principal',
+      saldo: 50,
+      minimo: 0,
+      status: 'OK',
+      cobertura: '',
+      updated_at: '2023-01-01',
+    }]);
     const result = await syncEstoque();
     expect(result.atualizados).toBe(1);
   });

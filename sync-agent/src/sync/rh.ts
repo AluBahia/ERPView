@@ -1,5 +1,5 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
@@ -30,7 +30,7 @@ export async function syncRH(): Promise<{ inseridos: number; atualizados: number
     WHERE AdmStatus NOT IN ('Desligado')
   `), { label: 'query-rh' });
 
-  const { data: destinoData } = await supabase.from('rh_colaboradores').select('*');
+  const destinoData = await fetchAll('rh_colaboradores', 'id,matricula,nome,cargo,data_admissao,status,updated_at');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
     matricula: d.matricula ?? '',

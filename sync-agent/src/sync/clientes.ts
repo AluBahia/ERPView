@@ -1,5 +1,5 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
@@ -7,12 +7,6 @@ import { logger } from '../logger.js';
 interface ClienteSQL {
   id: string;
   nome: string;
-  cnpj: string;
-  cidade: string;
-  estado: string;
-  email?: string;
-  telefone?: string;
-  ativo: string;
   data_atualizacao?: Date;
 }
 
@@ -23,39 +17,46 @@ export async function syncClientes(): Promise<{ inseridos: number; atualizados: 
     SELECT 
       CAST(Cliente AS VARCHAR(36)) AS id,
       Nome AS nome,
-      CgcCpf AS cnpj,
-      Cidade AS cidade,
-      Estado AS estado,
-      EMail AS email,
-      Telefone AS telefone,
-      Ativo AS ativo,
       DataAtualizacao AS data_atualizacao
     FROM Clientes
     WHERE Ativo = 'S'
   `), { label: 'query-clientes' });
 
-  const { data: destinoData } = await supabase.from('clientes').select('*');
-  const destino: { id: string; nome: string; cnpj: string; cidade: string; estado: string; email: string | null; telefone: string | null; ativo: boolean; updated_at: string | null }[] = (destinoData || []).map((d: any) => ({
+  const destinoData = await fetchAll('clientes', 'id,codigo,nome,segmento,volume_compras,frequencia,prazo_medio,classe_abc,status_credito,updated_at');
+  const destino: {
+    id: string;
+    codigo: string;
+    nome: string;
+    segmento: string | null;
+    volume_compras: number | null;
+    frequencia: string | null;
+    prazo_medio: string | null;
+    classe_abc: string | null;
+    status_credito: string | null;
+    updated_at: string | null;
+  }[] = (destinoData || []).map((d: any) => ({
     id: String(d.id),
+    codigo: d.codigo ?? '',
     nome: d.nome ?? '',
-    cnpj: d.cnpj ?? '',
-    cidade: d.cidade ?? '',
-    estado: d.estado ?? '',
-    email: d.email ?? null,
-    telefone: d.telefone ?? null,
-    ativo: d.ativo ?? true,
+    segmento: d.segmento ?? null,
+    volume_compras: d.volume_compras ?? 0,
+    frequencia: d.frequencia ?? null,
+    prazo_medio: d.prazo_medio ?? null,
+    classe_abc: d.classe_abc ?? null,
+    status_credito: d.status_credito ?? null,
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
+    codigo: String(f.id),
     nome: f.nome ?? '',
-    cnpj: f.cnpj ?? '',
-    cidade: f.cidade ?? '',
-    estado: f.estado ?? '',
-    email: f.email ?? null,
-    telefone: f.telefone ?? null,
-    ativo: f.ativo === 'S',
+    segmento: 'Geral',
+    volume_compras: 0,
+    frequencia: 'Eventual',
+    prazo_medio: 'Fatura',
+    classe_abc: 'C',
+    status_credito: 'OK',
     updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
@@ -82,10 +83,10 @@ export async function syncClientes(): Promise<{ inseridos: number; atualizados: 
 
   if (delta.deletados.length > 0) {
     await retry(
-      () => supabase.from('clientes').update({ ativo: false }).in('id', delta.deletados).then(r => r as any),
-      { label: 'soft-delete-clientes' }
+      () => supabase.from('clientes').delete().in('id', delta.deletados).then(r => r as any),
+      { label: 'delete-clientes' }
     );
-    logger.info(`Soft-deleted ${delta.deletados.length} clientes`);
+    logger.info(`Removidos ${delta.deletados.length} clientes`);
   }
 
   return {

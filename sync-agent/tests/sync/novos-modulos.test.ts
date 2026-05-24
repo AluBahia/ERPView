@@ -10,7 +10,6 @@ vi.mock('../../src/db/sqlserver.js', () => ({
 vi.mock('../../src/db/supabase.js', () => ({
   supabase: {
     from: vi.fn(() => ({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
       insert: vi.fn().mockResolvedValue({ error: null }),
       update: vi.fn(() => ({
         eq: vi.fn().mockResolvedValue({ error: null }),
@@ -18,6 +17,7 @@ vi.mock('../../src/db/supabase.js', () => ({
       })),
     })),
   },
+  fetchAll: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('../../src/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -41,9 +41,12 @@ describe('syncProducao', () => {
 
   it('processa ordens de produção com campos obrigatórios', async () => {
     vi.mocked(query).mockResolvedValue([{
-      id: '1', numero: 'OP-001', produto_id: '10',
-      quantidade: 100, status: 'Em Andamento',
-      data_inicio: new Date(), data_atualizacao: new Date(),
+      id: '1',
+      quantidade: 100,
+      status: 'Em produção',
+      data_inicio: new Date(),
+      data_atualizacao: new Date(),
+      linha: 'Linha 1',
     }]);
     const result = await syncProducao();
     expect(result).toHaveProperty('inseridos');
@@ -59,8 +62,13 @@ describe('syncExpedicao', () => {
 
   it('processa pedidos de expedição com campos obrigatórios', async () => {
     vi.mocked(query).mockResolvedValue([{
-      id: '1', numero: 'EXP-001', cliente_id: '5',
-      status: 'Aguardando', data_pedido: new Date(), data_atualizacao: new Date(),
+      id: '1',
+      numero: 'EXP-001',
+      cliente: 'Cliente X',
+      cidade: 'Salvador',
+      status: 'Pronto',
+      prev_entrega: new Date(),
+      data_atualizacao: new Date(),
     }]);
     const result = await syncExpedicao();
     expect(result).toHaveProperty('inseridos');
@@ -76,8 +84,12 @@ describe('syncManutencao', () => {
 
   it('processa ordens de serviço com campos obrigatórios', async () => {
     vi.mocked(query).mockResolvedValue([{
-      id: '1', numero: 'OS-001', tipo: 'Preventiva',
-      status: 'Aberta', data_abertura: new Date(), data_atualizacao: new Date(),
+      id: '1',
+      tipo: 'Preventiva',
+      status: 'Aberta',
+      descricao: 'Equipamento X',
+      data_abertura: new Date(),
+      data_atualizacao: new Date(),
     }]);
     const result = await syncManutencao();
     expect(result).toHaveProperty('inseridos');
@@ -113,7 +125,6 @@ describe('syncPatrimonio', () => {
     vi.mocked(query).mockResolvedValue([{
       id: '1', codigo: 'BP-001', descricao: 'Servidor Dell',
       categoria: 'TI', valor_aquisicao: 15000,
-      data_aquisicao: new Date('2022-06-01'),
       status: 'Ativo', data_atualizacao: new Date(),
     }]);
     const result = await syncPatrimonio();

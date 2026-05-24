@@ -17,8 +17,10 @@ vi.mock('mssql', () => ({
 }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
+const mockFetchAll = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 vi.mock('../../src/db/supabase.js', () => ({
   supabase: { from: mockFrom },
+  fetchAll: mockFetchAll,
 }));
 
 import { syncProdutos } from '../../src/sync/produtos.js';
@@ -28,21 +30,28 @@ describe('syncProdutos', () => {
 
   test('insere produtos novos no Supabase', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
+    mockFetchAll.mockResolvedValueOnce([]);
     const result = await syncProdutos();
     expect(result.inseridos).toBe(1);
   });
 
   test('atualiza produtos com preço alterado', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({
-        data: [{ id: '1', codigo: 'P001', descricao: 'Produto A', unidade: 'UN', preco_venda: 90, custo_medio: 60, ativo: true, updated_at: '2023-01-01' }],
-        error: null,
-      }),
       update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) }),
     });
+    mockFetchAll.mockResolvedValueOnce([{
+      id: '1',
+      codigo: 'P001',
+      descricao: 'Produto A',
+      familia: 'Geral',
+      custo: 60,
+      preco_venda: 90,
+      margem: 20,
+      giro: 'Médio',
+      updated_at: '2023-01-01',
+    }]);
     const result = await syncProdutos();
     expect(result.atualizados).toBe(1);
   });

@@ -1,5 +1,5 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
@@ -8,10 +8,8 @@ interface ProdutoSQL {
   id: string;
   codigo: string;
   descricao: string;
-  unidade: string;
   preco_venda: number;
   custo_medio: number;
-  ativo: string;
   data_atualizacao?: Date;
 }
 
@@ -23,24 +21,23 @@ export async function syncProdutos(): Promise<{ inseridos: number; atualizados: 
       CAST(Produto AS VARCHAR(36)) AS id,
       Referencia AS codigo,
       Nome AS descricao,
-      Unidade AS unidade,
       Preco1 AS preco_venda,
       CustoRep AS custo_medio,
-      Ativo AS ativo,
       DataAtualizacao AS data_atualizacao
     FROM Produtos
     WHERE Ativo = 'S'
   `), { label: 'query-produtos' });
 
-  const { data: destinoData } = await supabase.from('produtos').select('*');
+  const destinoData = await fetchAll('produtos', 'id,codigo,descricao,familia,custo,preco_venda,margem,giro,updated_at');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
     codigo: d.codigo ?? '',
     descricao: d.descricao ?? '',
-    unidade: d.unidade ?? '',
+    familia: d.familia ?? null,
+    custo: d.custo ?? 0,
     preco_venda: d.preco_venda ?? 0,
-    custo_medio: d.custo_medio ?? 0,
-    ativo: d.ativo ?? true,
+    margem: d.margem ?? 0,
+    giro: d.giro ?? null,
     updated_at: d.updated_at ?? null,
   }));
 
@@ -48,10 +45,11 @@ export async function syncProdutos(): Promise<{ inseridos: number; atualizados: 
     id: String(f.id),
     codigo: f.codigo ?? '',
     descricao: f.descricao ?? '',
-    unidade: f.unidade ?? '',
+    familia: 'Geral',
+    custo: f.custo_medio ?? 0,
     preco_venda: f.preco_venda ?? 0,
-    custo_medio: f.custo_medio ?? 0,
-    ativo: f.ativo === 'S',
+    margem: f.preco_venda > 0 ? ((f.preco_venda - (f.custo_medio ?? 0)) / f.preco_venda) * 100 : 0,
+    giro: 'Médio',
     updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 
@@ -66,8 +64,8 @@ export async function syncProdutos(): Promise<{ inseridos: number; atualizados: 
     }
   }
   if (delta.deletados.length > 0) {
-    await retry(() => supabase.from('produtos').update({ ativo: false }).in('id', delta.deletados).then(r => r as any), {
-      label: 'soft-delete-produtos',
+    await retry(() => supabase.from('produtos').delete().in('id', delta.deletados).then(r => r as any), {
+      label: 'delete-produtos',
     });
   }
 

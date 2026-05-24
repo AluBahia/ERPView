@@ -82,14 +82,15 @@ async function writeLogAuditoria(results: SyncResult[]): Promise<void> {
     const totalErros = results.filter((r) => !r.sucesso).length;
 
     await supabase.from('log_auditoria').insert({
-      tipo: 'sync',
-      detalhes: JSON.stringify({
+      acao: 'sync',
+      tabela: 'sistema',
+      dados: {
         resultados: results,
         totalInseridos,
         totalAtualizados,
         totalErros,
-      }),
-      created_at: new Date().toISOString(),
+      },
+      timestamp: new Date().toISOString(),
     }).then(r => r as any);
   } catch (err) {
     logger.error('Falha ao gravar log_auditoria', { error: (err as Error).message });
@@ -99,9 +100,10 @@ async function writeLogAuditoria(results: SyncResult[]): Promise<void> {
 export async function sendHeartbeat(): Promise<void> {
   try {
     await supabase.from('log_auditoria').insert({
-      tipo: 'heartbeat',
-      detalhes: JSON.stringify({ status: 'running', timestamp: new Date().toISOString() }),
-      created_at: new Date().toISOString(),
+      acao: 'heartbeat',
+      tabela: 'sistema',
+      dados: { status: 'running', timestamp: new Date().toISOString() },
+      timestamp: new Date().toISOString(),
     }).then(r => r as any);
     logger.debug('Heartbeat enviado');
   } catch (err) {

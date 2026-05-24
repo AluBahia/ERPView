@@ -1,5 +1,5 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
@@ -7,9 +7,8 @@ import { logger } from '../logger.js';
 interface NotaFiscalSQL {
   id: string;
   numero: string;
-  serie: string;
-  entidade_id: string;
-  valor_total: number;
+  contraparte: string;
+  valor: number;
   data_emissao: string;
   status: string;
   tipo: string;
@@ -21,25 +20,29 @@ export async function syncNotasFiscais(): Promise<{ inseridos: number; atualizad
 
   const fonte = await retry(() => query<NotaFiscalSQL>(`
     SELECT 
-      CAST(Numero AS VARCHAR(36)) AS id,
-      CAST(Numero AS VARCHAR) AS numero,
-      Serie AS serie,
-      CAST(COALESCE(Codigo, 0) AS VARCHAR(36)) AS entidade_id,
-      COALESCE(ValorTotal, 0) AS valor_total,
-      CONVERT(VARCHAR(10), DataEmissao, 120) AS data_emissao,
-      Status AS status,
-      Origem AS tipo,
-      DataAtualizacao AS data_atualizacao
-    FROM CtrlNotaFiscal
+      CAST(N.Numero AS VARCHAR(36)) AS id,
+      CAST(N.Numero AS VARCHAR) AS numero,
+      COALESCE(C.Nome, F.Nome, 'Desconhecido') AS contraparte,
+      COALESCE(N.ValorTotal, 0) AS valor,
+      CONVERT(VARCHAR(10), N.DataEmissao, 120) AS data_emissao,
+      N.Status AS status,
+      CASE
+        WHEN N.Origem IN ('Entrada', 'ENTRADA') THEN 'Entrada'
+        WHEN N.Origem IN ('Saida', 'Saída', 'SAIDA') THEN 'Saída'
+        ELSE N.Origem
+      END AS tipo,
+      N.DataEmissao AS data_atualizacao
+    FROM CtrlNotaFiscal N
+    LEFT JOIN Clientes C ON C.Cliente = N.Codigo
+    LEFT JOIN Fornecedor F ON F.Fornecedor = N.Codigo
   `), { label: 'query-notas-fiscais' });
 
-  const { data: destinoData } = await supabase.from('notas_fiscais').select('*');
+  const destinoData = await fetchAll('notas_fiscais', 'id,numero,contraparte,data_emissao,valor,tipo,status,updated_at');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
     numero: d.numero ?? '',
-    serie: d.serie ?? '',
-    entidade_id: d.entidade_id ?? '0',
-    valor_total: d.valor_total ?? 0,
+    contraparte: d.contraparte ?? '',
+    valor: d.valor ?? 0,
     data_emissao: d.data_emissao ?? '',
     status: d.status ?? '',
     tipo: d.tipo ?? 'Saída',
@@ -49,9 +52,8 @@ export async function syncNotasFiscais(): Promise<{ inseridos: number; atualizad
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
     numero: f.numero ?? '',
-    serie: f.serie ?? '',
-    entidade_id: f.entidade_id ?? '0',
-    valor_total: f.valor_total ?? 0,
+    contraparte: f.contraparte ?? '',
+    valor: f.valor ?? 0,
     data_emissao: f.data_emissao ?? '',
     status: f.status ?? '',
     tipo: f.tipo ?? 'Saída',

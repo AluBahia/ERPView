@@ -1,5 +1,5 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
@@ -7,13 +7,12 @@ import { logger } from '../logger.js';
 interface PedidoExpedicaoSQL {
   id: string;
   numero: string;
-  cliente_id: string;
+  cliente: string;
+  cidade?: string;
   transportadora?: string;
   status: string;
-  data_pedido?: Date;
-  data_previsao?: Date;
-  data_entrega?: Date;
-  peso_total?: number;
+  prev_entrega?: Date;
+  peso?: number;
   data_atualizacao?: Date;
 }
 
@@ -22,44 +21,42 @@ export async function syncExpedicao(): Promise<{ inseridos: number; atualizados:
 
   const fonte = await retry(() => query<PedidoExpedicaoSQL>(`
     SELECT
-      CAST(Pedido AS VARCHAR(36)) AS id,
-      CAST(Pedido AS VARCHAR) AS numero,
-      CAST(Cliente AS VARCHAR(36)) AS cliente_id,
-      '' AS transportadora,
-      Status AS status,
-      DataPedido AS data_pedido,
-      NULL AS data_previsao,
-      DataEntrega AS data_entrega,
-      NULL AS peso_total,
-      FimProc AS data_atualizacao
-    FROM WMSExpedicao
+      CAST(E.Pedido AS VARCHAR(36)) AS id,
+      CAST(E.Pedido AS VARCHAR) AS numero,
+      C.Nome AS cliente,
+      C.Cidade AS cidade,
+      E.Status AS status,
+      E.DataEntrega AS prev_entrega,
+      E.PesoTotal AS peso,
+      E.Transportadora AS transportadora,
+      E.FimProc AS data_atualizacao
+    FROM WMSExpedicao E
+    LEFT JOIN Clientes C ON C.Cliente = E.Cliente
     WHERE Status NOT IN ('Cancelado')
   `), { label: 'query-expedicao' });
 
-  const { data: destinoData } = await supabase.from('pedidos_expedicao').select('*');
+  const destinoData = await fetchAll('pedidos_expedicao', 'id,numero,cliente,cidade,peso,transportadora,prev_entrega,status,updated_at');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
     numero: d.numero ?? '',
-    cliente_id: String(d.cliente_id ?? '0'),
+    cliente: d.cliente ?? '',
+    cidade: d.cidade ?? null,
+    peso: d.peso ?? null,
     transportadora: d.transportadora ?? null,
     status: d.status ?? '',
-    data_pedido: d.data_pedido ?? null,
-    data_previsao: d.data_previsao ?? null,
-    data_entrega: d.data_entrega ?? null,
-    peso_total: d.peso_total ?? null,
+    prev_entrega: d.prev_entrega ?? null,
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
     numero: f.numero ?? '',
-    cliente_id: String(f.cliente_id ?? '0'),
+    cliente: f.cliente ?? '',
+    cidade: f.cidade ?? null,
+    peso: f.peso ?? null,
     transportadora: f.transportadora ?? null,
     status: f.status ?? '',
-    data_pedido: f.data_pedido ? f.data_pedido.toISOString() : null,
-    data_previsao: f.data_previsao ? f.data_previsao.toISOString() : null,
-    data_entrega: f.data_entrega ? f.data_entrega.toISOString() : null,
-    peso_total: f.peso_total ?? null,
+    prev_entrega: f.prev_entrega ? f.prev_entrega.toISOString().split('T')[0] : null,
     updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 

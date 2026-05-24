@@ -1,5 +1,5 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
@@ -32,26 +32,32 @@ export async function syncPedidosVenda(): Promise<{ inseridos: number; atualizad
     WHERE Status NOT IN ('Cancelado')
   `), { label: 'query-pedidos-venda' });
 
-  const { data: destinoData } = await supabase.from('pedidos_venda').select('*');
+  const destinoData = await fetchAll('pedidos_venda', 'id,numero,cliente_id,vendedor,data_pedido,valor_total,status,updated_at');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
     numero: d.numero ?? '',
-    cliente_id: String(d.cliente_id ?? '0'),
-    vendedor_id: String(d.vendedor_id ?? '0'),
+    cliente_id: d.cliente_id ?? null,
+    vendedor: d.vendedor ?? null,
     valor_total: d.valor_total ?? 0,
     status: d.status ?? '',
-    data_emissao: d.data_emissao ?? '',
+    data_pedido: d.data_pedido ?? null,
     updated_at: d.updated_at ?? null,
   }));
+
+  const clienteIdFromERP = (raw: string | null | undefined) => {
+    if (!raw) return null;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
     numero: f.numero ?? '',
-    cliente_id: f.cliente_id ?? '0',
-    vendedor_id: f.vendedor_id ?? '0',
+    cliente_id: clienteIdFromERP(f.cliente_id),
+    vendedor: f.vendedor_id ?? '',
     valor_total: f.valor_total ?? 0,
     status: f.status ?? '',
-    data_emissao: f.data_emissao ?? '',
+    data_pedido: f.data_emissao ?? '',
     updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 

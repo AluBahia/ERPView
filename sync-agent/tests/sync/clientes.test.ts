@@ -18,8 +18,10 @@ vi.mock('mssql', () => ({
 }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
+const mockFetchAll = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 vi.mock('../../src/db/supabase.js', () => ({
   supabase: { from: mockFrom },
+  fetchAll: mockFetchAll,
 }));
 
 import { syncClientes } from '../../src/sync/clientes.js';
@@ -29,11 +31,11 @@ describe('syncClientes', () => {
     vi.clearAllMocks();
   });
 
-  test('query clientes retorna campos obrigatórios: id, nome, cnpj, cidade', async () => {
+  test('query clientes retorna campos obrigatórios: id, codigo, nome', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
+    mockFetchAll.mockResolvedValueOnce([]);
 
     const result = await syncClientes();
     expect(result.inseridos).toBe(1);
@@ -41,9 +43,9 @@ describe('syncClientes', () => {
 
   test('upsert insere clientes novos no Supabase', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
+    mockFetchAll.mockResolvedValueOnce([]);
 
     const result = await syncClientes();
     expect(result.inseridos).toBeGreaterThanOrEqual(0);
@@ -51,12 +53,20 @@ describe('syncClientes', () => {
 
   test('upsert atualiza clientes modificados sem duplicar', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({
-        data: [{ id: '1', nome: 'Cliente Old', cnpj: '11.111.111/0001-11', cidade: 'São Paulo', estado: 'SP', email: null, telefone: null, ativo: true, updated_at: '2023-01-01' }],
-        error: null,
-      }),
       update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) }),
     });
+    mockFetchAll.mockResolvedValueOnce([{
+      id: '1',
+      codigo: '1',
+      nome: 'Cliente Old',
+      segmento: 'Geral',
+      volume_compras: 0,
+      frequencia: 'Eventual',
+      prazo_medio: 'Fatura',
+      classe_abc: 'C',
+      status_credito: 'OK',
+      updated_at: '2023-01-01',
+    }]);
 
     const result = await syncClientes();
     expect(result.atualizados).toBe(1);
@@ -64,13 +74,21 @@ describe('syncClientes', () => {
 
   test('soft delete: clientes removidos no ERP ficam com ativo=false', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({
-        data: [{ id: '99', nome: 'Removido', cnpj: '00.000.000/0000-00', cidade: 'Rio', estado: 'RJ', email: null, telefone: null, ativo: true, updated_at: '2023-01-01' }],
-        error: null,
-      }),
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),
-      update: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ data: null, error: null }) }),
+      delete: vi.fn().mockReturnValue({ in: vi.fn().mockResolvedValue({ data: null, error: null }) }),
     });
+    mockFetchAll.mockResolvedValueOnce([{
+      id: '99',
+      codigo: '99',
+      nome: 'Removido',
+      segmento: 'Geral',
+      volume_compras: 0,
+      frequencia: 'Eventual',
+      prazo_medio: 'Fatura',
+      classe_abc: 'C',
+      status_credito: 'OK',
+      updated_at: '2023-01-01',
+    }]);
 
     const result = await syncClientes();
     expect(result.deletados).toBe(1);
@@ -79,11 +97,14 @@ describe('syncClientes', () => {
   test('erro na query SQL Server é capturado e logado, sync continua', async () => {
     vi.clearAllMocks();
     const { default: sql } = await import('mssql');
-    (sql.connect as any).mockRejectedValueOnce(new Error('Connection timeout'));
+    const { closeSqlPool } = await import('../../src/db/sqlserver.js');
+    await closeSqlPool();
+    (sql.connect as any).mockRejectedValue(new Error('Connection timeout'));
 
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
+    mockFetchAll.mockResolvedValueOnce([]);
 
     await expect(syncClientes()).rejects.toThrow();
   }, 15000);

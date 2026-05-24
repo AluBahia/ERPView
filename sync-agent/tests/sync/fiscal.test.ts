@@ -7,7 +7,7 @@ vi.mock('mssql', () => ({
       request: vi.fn().mockReturnValue({
         query: vi.fn().mockResolvedValue({
           recordset: [
-            { id: '1', numero: '0001', serie: '1', entidade_id: 'c1', valor_total: 5000, data_emissao: '2024-01-15', status: 'Autorizada', tipo: 'saida', data_atualizacao: new Date('2024-01-01') },
+            { id: '1', numero: '0001', contraparte: 'Cliente A', valor: 5000, data_emissao: '2024-01-15', status: 'OK', tipo: 'Saída', data_atualizacao: new Date('2024-01-01') },
           ],
         }),
       }),
@@ -17,8 +17,10 @@ vi.mock('mssql', () => ({
 }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
+const mockFetchAll = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 vi.mock('../../src/db/supabase.js', () => ({
   supabase: { from: mockFrom },
+  fetchAll: mockFetchAll,
 }));
 
 import { syncNotasFiscais } from '../../src/sync/notas-fiscais.js';
@@ -28,21 +30,27 @@ describe('syncNotasFiscais', () => {
 
   test('insere notas fiscais novas no Supabase', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
+    mockFetchAll.mockResolvedValueOnce([]);
     const result = await syncNotasFiscais();
     expect(result.inseridos).toBe(1);
   });
 
   test('atualiza notas fiscais com status alterado', async () => {
     mockFrom.mockReturnValue({
-      select: vi.fn().mockResolvedValue({
-        data: [{ id: '1', numero: '0001', serie: '1', entidade_id: 'c1', valor_total: 5000, data_emissao: '2024-01-15', status: 'Pendente', tipo: 'saida', updated_at: '2023-01-01' }],
-        error: null,
-      }),
       update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) }),
     });
+    mockFetchAll.mockResolvedValueOnce([{
+      id: '1',
+      numero: '0001',
+      contraparte: 'Cliente A',
+      valor: 5000,
+      data_emissao: '2024-01-15',
+      status: 'Pendente',
+      tipo: 'Saída',
+      updated_at: '2023-01-01',
+    }]);
     const result = await syncNotasFiscais();
     expect(result.atualizados).toBe(1);
   });

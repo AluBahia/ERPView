@@ -1,13 +1,11 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
 
 interface OrdemProducaoSQL {
   id: string;
-  numero: string;
-  produto_id: string;
   quantidade: number;
   status: string;
   data_inicio?: Date;
@@ -23,9 +21,7 @@ export async function syncProducao(): Promise<{ inseridos: number; atualizados: 
   const fonte = await retry(() => query<OrdemProducaoSQL>(`
     SELECT
       CAST(Codigo AS VARCHAR(36)) AS id,
-      CAST(Codigo AS VARCHAR) AS numero,
-      '' AS produto_id,
-      COALESCE(NULL, 0) AS quantidade,
+      COALESCE(Quantidade, 0) AS quantidade,
       Status AS status,
       Data AS data_inicio,
       NULL AS data_previsao,
@@ -36,30 +32,26 @@ export async function syncProducao(): Promise<{ inseridos: number; atualizados: 
     WHERE Status NOT IN ('Cancelado')
   `), { label: 'query-producao' });
 
-  const { data: destinoData } = await supabase.from('ordens_producao').select('*');
+  const destinoData = await fetchAll('ordens_producao', 'id,produto,quantidade,inicio_prev,fim_prev,status,desvio,updated_at');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
-    numero: d.numero ?? '',
-    produto_id: String(d.produto_id ?? '0'),
+    produto: d.produto ?? '',
     quantidade: d.quantidade ?? 0,
     status: d.status ?? '',
-    data_inicio: d.data_inicio ?? null,
-    data_previsao: d.data_previsao ?? null,
-    data_conclusao: d.data_conclusao ?? null,
-    linha: d.linha ?? null,
+    inicio_prev: d.inicio_prev ?? null,
+    fim_prev: d.fim_prev ?? null,
+    desvio: d.desvio ?? null,
     updated_at: d.updated_at ?? null,
   }));
 
   const fonteNormalizada = fonte.map((f) => ({
     id: String(f.id),
-    numero: f.numero ?? '',
-    produto_id: String(f.produto_id ?? '0'),
+    produto: f.linha && f.linha.trim() ? f.linha : 'Produto A',
     quantidade: f.quantidade ?? 0,
     status: f.status ?? '',
-    data_inicio: f.data_inicio ? f.data_inicio.toISOString() : null,
-    data_previsao: f.data_previsao ? f.data_previsao.toISOString() : null,
-    data_conclusao: f.data_conclusao ? f.data_conclusao.toISOString() : null,
-    linha: f.linha ?? null,
+    inicio_prev: f.data_inicio ? f.data_inicio.toISOString().split('T')[0] : null,
+    fim_prev: f.data_previsao ? f.data_previsao.toISOString().split('T')[0] : null,
+    desvio: 'Nenhum',
     updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));
 

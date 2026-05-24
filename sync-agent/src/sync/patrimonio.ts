@@ -1,5 +1,5 @@
 import { query } from '../db/sqlserver.js';
-import { supabase } from '../db/supabase.js';
+import { supabase, fetchAll } from '../db/supabase.js';
 import { computeDelta } from '../utils/delta.js';
 import { retry } from '../utils/retry.js';
 import { logger } from '../logger.js';
@@ -11,8 +11,6 @@ interface BemPatrimonialSQL {
   categoria: string;
   localizacao?: string;
   valor_aquisicao: number;
-  data_aquisicao?: Date;
-  taxa_depreciacao?: number;
   status: string;
   data_atualizacao?: Date;
 }
@@ -28,24 +26,22 @@ export async function syncPatrimonio(): Promise<{ inseridos: number; atualizados
       CAST(Grupo AS VARCHAR) AS categoria,
       CAST(Localizacao AS VARCHAR) AS localizacao,
       ValorAquisicao AS valor_aquisicao,
-      DataAtivacao AS data_aquisicao,
-      TaxaDep AS taxa_depreciacao,
       Situacao AS status,
       DataUltMovimentacao AS data_atualizacao
     FROM BemPatrimonial
     WHERE Situacao NOT IN ('Baixado')
   `), { label: 'query-patrimonio' });
 
-  const { data: destinoData } = await supabase.from('bens_patrimoniais').select('*');
+  const destinoData = await fetchAll('bens_patrimoniais', 'id,codigo,descricao,categoria,localizacao,valor_original,depreciacao_acumulada,valor_liquido,status,updated_at');
   const destino = (destinoData || []).map((d: any) => ({
     id: String(d.id),
     codigo: d.codigo ?? '',
     descricao: d.descricao ?? '',
     categoria: d.categoria ?? '',
     localizacao: d.localizacao ?? null,
-    valor_aquisicao: d.valor_aquisicao ?? 0,
-    data_aquisicao: d.data_aquisicao ?? null,
-    taxa_depreciacao: d.taxa_depreciacao ?? null,
+    valor_original: d.valor_original ?? 0,
+    depreciacao_acumulada: d.depreciacao_acumulada ?? 0,
+    valor_liquido: d.valor_liquido ?? 0,
     status: d.status ?? '',
     updated_at: d.updated_at ?? null,
   }));
@@ -56,9 +52,9 @@ export async function syncPatrimonio(): Promise<{ inseridos: number; atualizados
     descricao: f.descricao ?? '',
     categoria: f.categoria ?? '',
     localizacao: f.localizacao ?? null,
-    valor_aquisicao: f.valor_aquisicao ?? 0,
-    data_aquisicao: f.data_aquisicao ? f.data_aquisicao.toISOString().split('T')[0] : null,
-    taxa_depreciacao: f.taxa_depreciacao ?? null,
+    valor_original: f.valor_aquisicao ?? 0,
+    depreciacao_acumulada: 0,
+    valor_liquido: f.valor_aquisicao ?? 0,
     status: f.status ?? '',
     updated_at: f.data_atualizacao ? f.data_atualizacao.toISOString() : null,
   }));

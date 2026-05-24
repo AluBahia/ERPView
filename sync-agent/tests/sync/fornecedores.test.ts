@@ -7,14 +7,16 @@ vi.mock('../../src/db/sqlserver.js', () => ({
 vi.mock('../../src/db/supabase.js', () => ({
   supabase: {
     from: vi.fn(() => ({
-      select: vi.fn().mockResolvedValue({ data: [], error: null }),
       insert: vi.fn().mockResolvedValue({ error: null }),
       update: vi.fn(() => ({
         eq: vi.fn().mockResolvedValue({ error: null }),
+      })),
+      delete: vi.fn(() => ({
         in: vi.fn().mockResolvedValue({ error: null }),
       })),
     })),
   },
+  fetchAll: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('../../src/logger.js', () => ({
   logger: { info: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -26,12 +28,6 @@ import { supabase } from '../../src/db/supabase.js';
 const mockFornecedor = {
   id: '1',
   nome: 'Fornecedor Teste Ltda',
-  cnpj: '12.345.678/0001-99',
-  cidade: 'São Paulo',
-  estado: 'SP',
-  email: 'contato@teste.com',
-  telefone: '(11) 9999-0000',
-  ativo: 'S',
   data_atualizacao: new Date('2026-01-15'),
 };
 

@@ -48,7 +48,7 @@ describe('orchestrator', () => {
     await runAllSyncs();
     expect(mockInsert).toHaveBeenCalled();
     const lastCall = mockInsert.mock.calls[mockInsert.mock.calls.length - 1];
-    expect(lastCall[0]).toHaveProperty('tipo', 'sync');
+    expect(lastCall[0]).toHaveProperty('acao', 'sync');
   });
 
   test('log inclui duração em ms de cada sync individual', async () => {
@@ -62,6 +62,6 @@ describe('orchestrator', () => {
     await sendHeartbeat();
     expect(mockInsert).toHaveBeenCalled();
     const lastCall = mockInsert.mock.calls[mockInsert.mock.calls.length - 1];
-    expect(lastCall[0]).toHaveProperty('tipo', 'heartbeat');
+    expect(lastCall[0]).toHaveProperty('acao', 'heartbeat');
   });
 });
